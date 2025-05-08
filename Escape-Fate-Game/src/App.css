@@ -42,6 +42,16 @@
   justify-content: center;
 }
 
-.read-the-docs {
-  color: #888;
+
+
+.card-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1000px;
+  margin: 0 auto;
 }
+

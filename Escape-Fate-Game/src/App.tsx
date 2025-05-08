@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './App.css';
 import Card from './Card';
 import { useEffect } from 'react'
+
 type Card = {
   Name: string;
   Text: string;
@@ -270,19 +271,14 @@ const cardClick = (card:Card) =>{
         <button onClick={() => deal()}>Deal</button>
       </div>
       </div>
-      <div>
+      
+      <div className='card-grid'>
       {draftArray.map((id, index) => {
           const card = cardLibrary.find((card) => card.id === id);
           return <Card key={`${id}-${index}`} card={card} zone='draft' onClick={()=> cardClick(card)}/>;
         })}
       </div>
-      {/* <div className='deck'>
-        {deckArray.map((id, index) => {
-          const card = cardLibrary.find((card) => card.id === id);
-          return <Card key={`${id}-${index}`} card={card} zone='draft' />;
-        })}
-      </div> */}
-      
+     
     </>
   );
 }
