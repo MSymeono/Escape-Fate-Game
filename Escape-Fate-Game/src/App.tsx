@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import './App.css';
 import Card from './Card';
-import { useEffect } from 'react'
+import { useEffect } from 'react';
+import DraftBoard from './draftBoard';
+import PlayBoard from './playBoard';
 
 type Card = {
   Name: string;
   Text: string;
   id: number;
   Quantity: number;
-  Priority: number
-}
+  Priority: number;
+};
 function App() {
   // const [count, setCount] = useState(0)
   const cardLibrary = [
@@ -172,40 +174,47 @@ function App() {
     1, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11, 12, 13, 14, 14, 15, 16,
     17, 18, 19,
   ]);
-  const [activePlayer, setAP] = useState('Player 1')
-  const [discardPile, discard] = useState<number[]>([])
-  const [draftArray, setDraftArray] = useState<number[]>([])
-  const [player1Deck, setplayer1Deck] = useState<number[]>([22])
-  const [player2Deck, setplayer2Deck] = useState<number[]>([22])
+  const [activePlayer, setAP] = useState('Player 1');
+  const [discardPile, discard] = useState<number[]>([]);
+  const [draftArray, setDraftArray] = useState<number[]>([]);
+  const [playZone1, setplayZone1] = useState<number[]>([]);
+  const [playZone2, setplayZone2] = useState<number[]>([]);
+  const [player1Deck, setplayer1Deck] = useState<number[]>([22]);
+  const [player2Deck, setplayer2Deck] = useState<number[]>([22]);
   const [phase, setPhase] = useState('draft');
-
+  useEffect(() => {
+    if (phase === 'play') {
+      setplayer1Deck((prev) => [...prev, 21, 20]);
+      setplayer2Deck((prev) => [...prev, 21, 20]);
+    }
+  }, [phase]);
   useEffect(() => {
     if (phase === 'draft' && draftArray.length === 1) {
       const toDiscard = draftArray[0];
-  
+
       // Determine who drafted card 15
       const p1Last = player1Deck[player1Deck.length - 1];
       const p2Last = player2Deck[player2Deck.length - 1];
-  
+
       if (p1Last === 15) {
-        setplayer1Deck(prev => [...prev, toDiscard]);
+        setplayer1Deck((prev) => [...prev, toDiscard]);
       } else if (p2Last === 15) {
-        setplayer2Deck(prev => [...prev, toDiscard]);
+        setplayer2Deck((prev) => [...prev, toDiscard]);
       } else {
-        discard(prev => [...prev, toDiscard]);
+        discard((prev) => [...prev, toDiscard]);
       }
-  
+
       setDraftArray([]);
     }
   }, [draftArray]);
   useEffect(() => {
     if (phase === 'draft' && draftArray.length === 2) {
-      setAP(prev => (prev === 'Player 1' ? 'Player 2' : 'Player 1'));
+      setAP((prev) => (prev === 'Player 1' ? 'Player 2' : 'Player 1'));
     }
-  }, [draftArray])
+  }, [draftArray]);
   const shuffle = () => {
-    if (deckArray.length<24){
-      return
+    if (deckArray.length < 24) {
+      return;
     }
     const tempArray = [...deckArray];
     for (let i = tempArray.length - 1; i >= 0; i--) {
@@ -216,69 +225,70 @@ function App() {
       ];
     }
     setDeckArray(tempArray);
-    console.log(tempArray)
+    console.log(tempArray);
   };
-  const deal = () =>{
-    if(deckArray.length===0){
-      setPhase('play')}
-     else {
-    const tempdraftArray:number[] = []
-    const tempdeckArray = [...deckArray]
-    while (tempdraftArray.length<3){
-      tempdraftArray.push(tempdeckArray.shift()!)
+  const deal = () => {
+    if (deckArray.length === 0) {
+      setPhase('play');
+    } else {
+      const tempdraftArray: number[] = [];
+      const tempdeckArray = [...deckArray];
+      while (tempdraftArray.length < 3) {
+        tempdraftArray.push(tempdeckArray.shift()!);
+      }
+      setDraftArray(tempdraftArray);
+      setDeckArray(tempdeckArray);
     }
-    setDraftArray(tempdraftArray)
-    setDeckArray(tempdeckArray)
-  }
+  };
+  const cardClick = (card: Card) => {
+    if (phase === 'draft') {
+      if (activePlayer === 'Player 1') {
+        const p1Deck = [...player1Deck];
+        p1Deck.push(card.id);
+        setplayer1Deck(p1Deck);
+        // setAP('Player 2')
+        console.log(p1Deck, activePlayer, 'p1');
+      } else if (activePlayer === 'Player 2') {
+        const p2Deck = [...player2Deck];
+        p2Deck.push(card.id);
+        setplayer2Deck(p2Deck);
+        // setAP('Player 1')
+        console.log(p2Deck, activePlayer, 'p2');
+      }
+      setDraftArray((prev) => {
+        const index = prev.indexOf(card.id);
+        if (index === -1) return prev; // fallback safety
+        return [...prev.slice(0, index), ...prev.slice(index + 1)];
+      });
+    } else {
+    }
+  };
 
-}
-const cardClick = (card:Card) =>{
-  if (phase === 'draft'){
-    if (activePlayer === 'Player 1'){
-      const p1Deck = [...player1Deck]
-      p1Deck.push(card.id)
-      setplayer1Deck(p1Deck)
-      // setAP('Player 2')
-      console.log(p1Deck, activePlayer, 'p1')
-          }
-    
-    else if (activePlayer === 'Player 2') {
-      const p2Deck = [...player2Deck]
-      p2Deck.push(card.id)
-      setplayer2Deck(p2Deck)
-      // setAP('Player 1')
-      console.log(p2Deck, activePlayer, 'p2')
-      
-    }
-    setDraftArray(prev => {
-      const index = prev.indexOf(card.id);
-      if (index === -1) return prev; // fallback safety
-      return [...prev.slice(0, index), ...prev.slice(index + 1)];
-    });
-  
-  }
-  else {
-    
-  }
-}
+  const resolvePlayEffects = () => {};
+
   return (
     <>
-    <h1>{activePlayer}'s turn to draft</h1>
-      <div className='buttons'><div className='indivButton'>
-        <button onClick={() => shuffle()}>Shuffle</button>
-      </div>
-      <div className='indivButton'>
-        <button onClick={() => deal()}>Deal</button>
-      </div>
-      </div>
-      
-      <div className='card-grid'>
-      {draftArray.map((id, index) => {
-          const card = cardLibrary.find((card) => card.id === id);
-          return <Card key={`${id}-${index}`} card={card} zone='draft' onClick={()=> cardClick(card)}/>;
-        })}
-      </div>
-     
+      {phase === 'draft' ? (
+        <DraftBoard
+          activePlayer={activePlayer}
+          deckArray={deckArray}
+          draftArray={draftArray}
+          cardLibrary={cardLibrary}
+          onCardClick={cardClick}
+          onShuffle={shuffle}
+          onDeal={deal}
+        />
+      ) : (
+        <PlayBoard
+          player1Deck={player1Deck}
+          player2Deck={player2Deck}
+          discardPile={discardPile}
+          playZone1={playZone1}
+          playZone2={playZone2}
+          cardLibrary={cardLibrary}
+          resolvePlayEffects={() => console.log('TODO: resolve')}
+        />
+      )}
     </>
   );
 }
