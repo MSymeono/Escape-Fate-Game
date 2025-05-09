@@ -27,6 +27,7 @@ const PlayBoard = ({
   discardPile,
   playZone2,
   cardLibrary,
+  phase,
   resolvePlayEffects,
 }: PlayBoardProps) => {
   const topCard = (id: number | undefined) =>
@@ -41,14 +42,14 @@ const PlayBoard = ({
         <div className="player-zone">
           <h3>Player 1</h3>
           {topCard(playZone1[playZone1.length - 1]) && (
-            <Card card={topCard(playZone1[playZone1.length - 1])!} zone="play" />
+            <Card card={topCard(playZone1[playZone1.length - 1])!} phase={phase} />
           )}
         </div>
 
         <div className="player-zone">
           <h3>Player 2</h3>
           {topCard(playZone2[playZone2.length - 1]) && (
-            <Card card={topCard(playZone2[playZone2.length - 1])!} zone="play" />
+            <Card card={topCard(playZone2[playZone2.length - 1])!} phase={phase} />
           )}
         </div>
       </div>

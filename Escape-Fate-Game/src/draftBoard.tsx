@@ -27,6 +27,7 @@ const DraftBoard = ({
   cardLibrary,
   onCardClick,
   onShuffle,
+  phase,
   onDeal,
 }: DraftBoardProps) => {
   return (
@@ -50,7 +51,7 @@ const DraftBoard = ({
             <Card
               key={`${id}-${index}`}
               card={card}
-              zone="draft"
+              phase={phase}
               onClick={() => onCardClick(card)}
             />
           );
