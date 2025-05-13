@@ -4,6 +4,8 @@ import Card from './Card';
 import { useEffect } from 'react';
 import DraftBoard from './draftBoard';
 import PlayBoard from './playBoard';
+import RulesOverlay from './rulesOverlay';
+import CardList from './cardList';
 
 type Card = {
   Name: string;
@@ -12,6 +14,14 @@ type Card = {
   Quantity: number;
   Priority: number;
 };
+
+type PlayedCard = { id: number; owner: 'Player 1' | 'Player 2' };
+type EffectHandler = (
+  card: Card,
+  owner: 'Player 1' | 'Player 2',
+  negatedPlayers: Set<'Player 1' | 'Player 2'>
+) => void;
+
 function App() {
   // library of cards in the game. Shows Name, text, priority, quantity, and the ID for each card.
   const cardLibrary = [
@@ -183,13 +193,36 @@ function App() {
   // draftArray is each set of 3 cards that gets drafted during the draft portion.
   const [draftArray, setDraftArray] = useState<number[]>([]);
   // the two play zones represent each player's "in play" zones.
-  const [playZone1, setplayZone1] = useState<number[]>([]);
-  const [playZone2, setplayZone2] = useState<number[]>([]);
+  const [playZone1, setplayZone1] = useState<PlayedCard[]>([]);
+  const [playZone2, setplayZone2] = useState<PlayedCard[]>([]);
   // the two decks get filled during the draft portion and get emptied during the play portion. They start with the last card "cut", which, when drawn, makes the player lose the game
   const [player1Deck, setplayer1Deck] = useState<number[]>([22]);
   const [player2Deck, setplayer2Deck] = useState<number[]>([22]);
   // this controls which phase of the game we are in to help with rendering.
   const [phase, setPhase] = useState('draft');
+  //rules and cardsList below are two overlays that respectively show the rules and the full list of cards.
+  const [rules, setRules] = useState<'On' | 'Off'>('Off');
+  const [cardsList, setCardList] = useState<'On' | 'Off'>('Off');
+
+  const [negatedPlayers, setNegatedPlayers] = useState<
+    Set<'Player 1' | 'Player 2'>
+  >(new Set());
+  const [playInteraction, setPlayInteraction] = useState<{
+    card: Card;
+    owner: 'Player 1' | 'Player 2';
+    context: any;
+  } | null>(null);
+
+  function partition<T>(arr: T[], predicate: (item: T) => boolean): [T[], T[]] {
+    const truthy: T[] = [];
+    const falsy: T[] = [];
+
+    for (const item of arr) {
+      (predicate(item) ? truthy : falsy).push(item);
+    }
+
+    return [truthy, falsy];
+  }
 
   //useEffect time!
   // When we move from draft to play, this tops off each player's deck with "weave" and "measure", the only consistent cards in each player's deck
@@ -226,7 +259,230 @@ function App() {
     }
   }, [draftArray]);
 
-  useEffect(() => {}, [playZone1, playZone2]);
+  const effectHandlers: {
+    [key: number]: EffectHandler;
+  } = {
+    //chaotic
+    1: (card, owner, negatedPlayers) => {
+      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
+      setNegatedPlayers((prev) => new Set(prev).add(target));
+    },
+    // Covetous
+    2: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    //Deceitful
+    3: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    //Impulsive
+    4: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    //Indecisive
+    5: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    //Irreverant
+    6: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
+      setNegatedPlayers((prev) => new Set(prev).add(target));
+    },
+    //Free
+    7: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) return;
+      setNegatedPlayers((prev) => new Set(prev).add(owner));
+    },
+    //Hasty
+    8: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+      setplayer1Deck((prev) => prev.slice(0, -1));
+      setplayer2Deck((prev) => prev.slice(0, -1));
+    },
+    //Nostalgic
+    9: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    //Patient
+    10: (card, owner, negatedPlayers) => {
+      return;
+    },
+    //Plunderous
+    11: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    //Powerful
+    12: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    // Rapid
+    13: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    // Reckless
+    14: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+      if (owner === 'Player 1') {
+        const top = player2Deck[player2Deck.length - 1];
+        if (top !== undefined) {
+          setplayZone2((prev) => [...prev, { id: top, owner: 'Player 2' }]);
+          setplayer2Deck((prev) => prev.slice(0, -1));
+        }
+      }
+      if (owner === 'Player 2') {
+        const top = player1Deck[player1Deck.length - 1];
+        if (top !== undefined) {
+          setplayZone1((prev) => [...prev, { id: top, owner: 'Player 1' }]);
+          setplayer1Deck((prev) => prev.slice(0, -1));
+        }
+      }
+    },
+    //Resourceful
+    15: (card, owner, negatedPlayers) => {
+      return;
+    },
+    //Strategic
+    16: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    //Tempered
+    17: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    //Tranquil
+    18: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+
+      if (owner === 'Player 1') {
+        const [toReturn, remaining] = partition(playZone1, (c) => c.id === 10);
+        setplayer1Deck((prev) => [...prev, ...toReturn.map((c) => c.id)]);
+        setplayZone1(remaining);
+      }
+
+      if (owner === 'Player 2') {
+        const [toReturn, remaining] = partition(playZone2, (c) => c.id === 10);
+        setplayer2Deck((prev) => [...prev, ...toReturn.map((c) => c.id)]);
+        setplayZone2(remaining);
+      }
+    },
+    //Wisened
+    19: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+      if (owner === 'Player 1') {
+        if (playZone1.length > playZone2.length) {
+          discard((prev) => [...prev, player2Deck[player2Deck.length - 1]]);
+          setplayer2Deck((prev) => prev.slice(0, -1));
+        }
+      }
+      if (owner === 'Player 2') {
+        if (playZone2.length > playZone1.length) {
+          discard((prev) => [...prev, player1Deck[player1Deck.length - 1]]);
+          setplayer1Deck((prev) => prev.slice(0, -1));
+        }
+      }
+      return;
+    },
+    //Weave
+    20: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+    //Measure
+    21: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+      if (owner === 'Player 1') {
+        if (player1Deck.length < player2Deck.length) {
+          discard((prev) => [...prev, player2Deck[player2Deck.length - 1]]);
+          setplayer2Deck((prev) => prev.slice(0, -1));
+        }
+      }
+      if (owner === 'Player 2') {
+        if (player2Deck.length < player1Deck.length) {
+          discard((prev) => [...prev, player1Deck[player1Deck.length - 1]]);
+          setplayer1Deck((prev) => prev.slice(0, -1));
+        }
+      }
+    },
+    //Cut
+    22: (card, owner, negatedPlayers) => {
+      if (negatedPlayers.has(owner)) {
+        setNegatedPlayers(new Set());
+        return;
+      }
+    },
+  };
+  useEffect(() => {
+    console.log(playZone2);
+    if (phase !== 'play') return;
+    const latestP1 = playZone1[playZone1.length - 1];
+    const latestP2 = playZone2[playZone2.length - 1];
+
+    const allPlayed = [latestP1, latestP2].filter(Boolean); // full PlayedCard objects
+
+    const sorted = allPlayed
+      .map(({ id, owner }) => {
+        const card = cardLibrary.find((c) => c.id === id);
+        return card ? { card, owner } : null;
+      })
+      .filter(Boolean) // remove nulls
+      .sort((a, b) => (a.card.Priority ?? 99) - (b.card.Priority ?? 99));
+    console.log(sorted, sorted[0]?.card);
+    sorted.forEach(({ card, owner }) => {
+      const handler = effectHandlers[card.id];
+      if (handler) handler(card, owner, negatedPlayers); // use your current handler signature
+    });
+  }, [playZone1, playZone2]);
 
   // shuffling algorithm. Start at the end of the deckArray(drafting pool), pick a random number between 0 and 23 and swap our current position with it. Keep going backwards until we hit the first element in the array and we know that every element has been moved at least once.
   const shuffle = () => {
@@ -269,14 +525,14 @@ function App() {
         p1Deck.push(card.id);
         setplayer1Deck(p1Deck);
 
-        // console.log(p1Deck, activePlayer, 'p1');
+        console.log(p1Deck, activePlayer, 'p1');
         // if the player is 2, clicking on the card will push it to their deck.
       } else if (activePlayer === 'Player 2') {
         const p2Deck = [...player2Deck];
         p2Deck.push(card.id);
         setplayer2Deck(p2Deck);
 
-        // console.log(p2Deck, activePlayer, 'p2');
+        console.log(p2Deck, activePlayer, 'p2');
       }
       // removes the card that just got drafted from the draftArray
       setDraftArray((prev) => {
@@ -286,35 +542,63 @@ function App() {
       });
     }
   };
+  // go to the next one
+  const nextCards = () => {
+    const p1Top = player1Deck[player1Deck.length - 1];
+    const p2Top = player2Deck[player2Deck.length - 1];
+    if (p1Top !== undefined) {
+      setplayZone1((prev) => [...prev, { id: p1Top, owner: 'Player 1' }]);
+      setplayer1Deck((prev) => prev.slice(0, -1));
+    }
 
-  const resolvePlayEffects = () => {};
+    if (p2Top !== undefined) {
+      setplayZone2((prev) => [...prev, { id: p2Top, owner: 'Player 2' }]);
+      setplayer2Deck((prev) => prev.slice(0, -1));
+    }
+  };
 
   return (
-    <>
-      {phase === 'draft' ? (
-        <DraftBoard
-          activePlayer={activePlayer}
-          deckArray={deckArray}
-          draftArray={draftArray}
+    <div>
+      {rules === 'Off' && <button onClick={() => setRules('On')}>Rules</button>}
+      {rules === 'On' && <RulesOverlay onClose={() => setRules('Off')} />}
+
+      {cardsList === 'Off' && (
+        <button onClick={() => setCardList('On')}>Card List</button>
+      )}
+      {cardsList === 'On' && (
+        <CardList
           cardLibrary={cardLibrary}
-          onCardClick={cardClick}
-          onShuffle={shuffle}
-          phase={phase}
-          onDeal={deal}
-        />
-      ) : (
-        <PlayBoard
-          player1Deck={player1Deck}
-          player2Deck={player2Deck}
-          discardPile={discardPile}
-          playZone1={playZone1}
-          playZone2={playZone2}
-          phase={phase}
-          cardLibrary={cardLibrary}
-          resolvePlayEffects={() => console.log('TODO: resolve')}
+          onClose={() => setCardList('Off')}
         />
       )}
-    </>
+      <>
+        {phase === 'draft' ? (
+          <DraftBoard
+            activePlayer={activePlayer}
+            deckArray={deckArray}
+            draftArray={draftArray}
+            cardLibrary={cardLibrary}
+            onCardClick={cardClick}
+            onShuffle={shuffle}
+            phase={phase}
+            onDeal={deal}
+          />
+        ) : (
+          <PlayBoard
+            player1Deck={player1Deck}
+            player2Deck={player2Deck}
+            discardPile={discardPile}
+            playZone1={playZone1}
+            playZone2={playZone2}
+            phase={phase}
+            cardLibrary={cardLibrary}
+            playInteraction={playInteraction}
+            setPlayInteraction={setPlayInteraction}
+            nextCards={() => nextCards()}
+          />
+        )}
+      </>
+    </div>
   );
 }
 

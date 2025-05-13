@@ -1,62 +1,83 @@
 .card-container {
-    perspective: 1000px;
-    width: clamp(120px, 18vw, 180px);
-    height: clamp(160px, 26vw, 260px);
-  }
-  
-  .card-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
-  }
-  
-  .card-container:hover .card-inner {
-    transform: rotateY(180deg);
-  }
-  
-  .card-front,
-  .card-back {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 0.9rem;
-    padding: 0.5rem;
-    overflow: hidden;
-    text-align: center;
-    flex-direction: column;
-    box-sizing: border-box;
-  }
-  
-  /* This class is no longer needed */
-  .card-front-content {
-    /* Removed rotateY */
-  }
-  
-  .card-front {
-    background-color: white;
-    transform: rotateY(180deg); /* ✅ Don't rotate the front */
-  }
-  
-  .card-back {
-    background-color: #000000;
-    color: white;
-    transform: none; /* ✅ Back is rotated */
-  }
-  
-  .card-back img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 8px;
-  }
-  
+  perspective: 1000px;
+  width: clamp(120px, 18vw, 180px);
+  height: clamp(160px, 26vw, 260px);
+}
+
+/* Common inner styling */
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+/* Flip only on hover in draft phase */
+.card-container.draft:hover .card-inner.draft {
+  transform: rotateY(180deg);
+}
+
+.card-front,
+.card-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  overflow: hidden;
+  text-align: center;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Draft-specific flip logic */
+.card-front.draft {
+  background-color: white;
+  transform: rotateY(180deg);
+}
+
+.card-back.draft {
+  background-color: #000000;
+  color: white;
+  transform: none;
+}
+
+.card-back.draft img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Play-specific overrides (disable flip) */
+.card-inner.play {
+  transform: none !important;
+  transform-style: flat !important;
+}
+
+.card-front.play {
+  transform: none !important;
+  backface-visibility: visible !important;
+  background-color: white;
+}
+
+.card-back.play {
+  display: none !important;
+}
+
+/* Optional: ensure visibility clarity */
+.card-container.play * {
+  opacity: 1 !important;
+  filter: none !important;
+  color: inherit;
+}
+

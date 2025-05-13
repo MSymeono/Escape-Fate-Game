@@ -10,14 +10,14 @@ type CardProps = {
   const Card = ({ card, onClick, phase }: CardProps) => {
     if (phase === 'draft') {
       return (
-        <div className="card-container">
-          <div className="card-inner">
-            <div className="card-front" onClick={onClick}>
+        <div className={`card-container ${phase}`}>
+          <div className={`card-inner ${phase}`}>
+            <div className={`card-front ${phase}`} onClick={onClick}>
               <h3>{card.Name}</h3>
               <p>{card.Text}</p>
               <p>{card.Priority}</p>
             </div>
-            <div className="card-back">
+            <div className={`card-back ${phase}`}>
               <img src={CardBack} alt="card back" />
             </div>
           </div>
@@ -25,19 +25,23 @@ type CardProps = {
       );
     }
   
-    if (phase === 'play'){
-    return (
-      <div className="card-container card-play">
-        <div className="card-face">
-          <h3>{card.Name}</h3>
-          <p className="card-text">{card.Text}</p>
-          <div className="card-hover-details">
-            <p>Priority: {card.Priority ?? '—'}</p>
-            {/* Add more details here if you want */}
+    if (phase === 'play') {
+      return (
+        <div className={`card-container ${phase}`}>
+          <div className={`card-inner ${phase}`}>
+            <div className={`card-front ${phase}`}>
+              <h3>{card.Name}</h3>
+              <p className="card-text">{card.Text}</p>
+              <div className="card-hover-details">
+                {card.Priority !== null && (
+                  <p>Priority: {card.Priority}</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    );}
+      );
+    }
   };
   
 
