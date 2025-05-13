@@ -207,11 +207,13 @@ function App() {
   const [negatedPlayers, setNegatedPlayers] = useState<
     Set<'Player 1' | 'Player 2'>
   >(new Set());
-  const [playInteraction, setPlayInteraction] = useState<{
-    card: Card;
-    owner: 'Player 1' | 'Player 2';
-    context: any;
-  } | null>(null);
+  const [playInteraction, setPlayInteraction] = useState<
+    {
+      card: Card;
+      owner: 'Player 1' | 'Player 2';
+      context: any;
+    }[]
+  >([]);
 
   function partition<T>(arr: T[], predicate: (item: T) => boolean): [T[], T[]] {
     const truthy: T[] = [];
@@ -258,6 +260,10 @@ function App() {
       setAP((prev) => (prev === 'Player 1' ? 'Player 2' : 'Player 1'));
     }
   }, [draftArray]);
+
+  useEffect(() => {
+    console.log('Current playInteraction state:', playInteraction);
+  }, [playInteraction]);
 
   const effectHandlers: {
     [key: number]: EffectHandler;
@@ -434,6 +440,15 @@ function App() {
         setNegatedPlayers(new Set());
         return;
       }
+      console.log(player1Deck.slice(-3), 'p1', owner)
+      console.log(player2Deck.slice(-3), 'p2', owner)
+      const topThreeIds = owner === 'Player 1' ? player1Deck.slice(-3) : player2Deck.slice(-3);
+      
+    
+      setPlayInteraction((prev) => [
+        ...prev,
+        { card, owner, context: { topThreeIds } } 
+      ]);
     },
     //Measure
     21: (card, owner, negatedPlayers) => {
@@ -463,7 +478,7 @@ function App() {
     },
   };
   useEffect(() => {
-    console.log(playZone2);
+    // console.log(playZone2);
     if (phase !== 'play') return;
     const latestP1 = playZone1[playZone1.length - 1];
     const latestP2 = playZone2[playZone2.length - 1];
@@ -478,7 +493,9 @@ function App() {
       .filter(Boolean) // remove nulls
       .sort((a, b) => (a.card.Priority ?? 99) - (b.card.Priority ?? 99));
     console.log(sorted, sorted[0]?.card);
+    
     sorted.forEach(({ card, owner }) => {
+      console.log("Triggering handler for:", card.Name, "by", owner);
       const handler = effectHandlers[card.id];
       if (handler) handler(card, owner, negatedPlayers); // use your current handler signature
     });
@@ -586,6 +603,8 @@ function App() {
         ) : (
           <PlayBoard
             player1Deck={player1Deck}
+            setplayer1Deck={setplayer1Deck}
+            setplayer2Deck={setplayer2Deck}
             player2Deck={player2Deck}
             discardPile={discardPile}
             playZone1={playZone1}

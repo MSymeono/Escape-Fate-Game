@@ -1,29 +1,7 @@
 import React, { useState } from 'react';
 import Card from './Card';
+import EffectModal from './effectModal';
 import './playBoard.css';
-
-
-const EffectModal = ({
-  card,
-  owner,
-  context,
-  onComplete,
-}: {
-  card: CardType;
-  owner: 'Player 1' | 'Player 2';
-  context: any;
-  onComplete: (newState?: any) => void;
-}) => {
-  return (
-    <div className="effect-modal">
-      <h2>{card.Name} — {owner}</h2>
-      <p>{card.Text}</p>
-      {/* Example: You can render more interaction UI here */}
-      <button onClick={() => onComplete()}>Done</button>
-    </div>
-  );
-};
-
 
 type CardType = {
   Name: string;
@@ -32,30 +10,49 @@ type CardType = {
   Quantity: number;
   Priority: number | null;
 };
+
 type PlayedCard = { id: number; owner: 'Player 1' | 'Player 2' };
 
 type PlayBoardProps = {
   player1Deck: number[];
+  setplayer1Deck: React.Dispatch<React.SetStateAction<number[]>>;
   player2Deck: number[];
+  setplayer2Deck: React.Dispatch<React.SetStateAction<number[]>>;
   playZone1: PlayedCard[];
   playZone2: PlayedCard[];
   cardLibrary: CardType[];
   nextCards: () => void;
   discardPile: number[];
   phase: string;
-  playInteraction: {card:Card; owner: 'Player 1' | 'Player 2'; context:any;};
+  playInteraction: {
+    card: CardType;
+    owner: 'Player 1' | 'Player 2';
+    context: any;
+  }[];
+  setPlayInteraction: React.Dispatch<
+    React.SetStateAction<
+      {
+        card: CardType;
+        owner: 'Player 1' | 'Player 2';
+        context: any;
+      }[]
+    >
+  >;
 };
 
 const PlayBoard = ({
   player1Deck,
   player2Deck,
+  setplayer1Deck,
+  setplayer2Deck,
   playZone1,
   playZone2,
   cardLibrary,
   nextCards,
-  playInteraction,
   discardPile,
   phase,
+  playInteraction,
+  setPlayInteraction,
 }: PlayBoardProps) => {
   const [showStack, setShowStack] = useState(false);
 
@@ -66,7 +63,6 @@ const PlayBoard = ({
       {stack.length > 0 &&
         (() => {
           const id = stack[stack.length - 1].id;
-          
           const card = getCard(id);
           return card ? (
             <div className='stacked-card' style={{ top: '0px', zIndex: 99 }}>
@@ -101,7 +97,7 @@ const PlayBoard = ({
             <h2>Player 1 Stack</h2>
             <div className='horizontal-stack'>
               {playZone1.map((cardObj, i) => {
-                const card = cardLibrary.find((c) => c.id === cardObj.id);
+                const card = getCard(cardObj.id);
                 return card ? (
                   <Card
                     key={`${cardObj.id}-${i}`}
@@ -116,7 +112,7 @@ const PlayBoard = ({
             <h2>Player 2 Stack</h2>
             <div className='horizontal-stack'>
               {playZone2.map((cardObj, i) => {
-                const card = cardLibrary.find((c) => c.id === cardObj.id);
+                const card = getCard(cardObj.id);
                 return card ? (
                   <Card
                     key={`${cardObj.id}-${i}`}
@@ -132,15 +128,46 @@ const PlayBoard = ({
           </div>
         </div>
       )}
-      {playInteraction && (
-  <EffectModal
-    card={playInteraction.card}
-    owner={playInteraction.owner}
-    context={playInteraction.context}
-    onComplete={() => setPlayInteraction(null)}
-  />
-)}
 
+      {playInteraction.length > 0 &&
+        (console.log('Active interaction:', playInteraction[0]),
+        (
+          <EffectModal
+            card={playInteraction[0].card}
+            owner={playInteraction[0].owner}
+            context={playInteraction[0].context}
+            cardLibrary={cardLibrary}
+            onComplete={(newOrder) => {
+              setPlayInteraction((prev) => {
+                const current = prev[0]; 
+                const reorderedIds = newOrder?.map((c) => c.id) || [];
+
+                if (reorderedIds.length > 0) {
+                  if (current.owner === 'Player 1') {
+                    setplayer1Deck((prev) => {
+                      const rest = prev.slice(
+                        0,
+                        prev.length - reorderedIds.length
+                      );
+                      return [...rest, ...reorderedIds];
+                    });
+                  } else {
+                    setplayer2Deck((prev) => {
+                      const rest = prev.slice(
+                        0,
+                        prev.length - reorderedIds.length
+                      );
+                      return [...rest, ...reorderedIds];
+                    });
+                  }
+                }
+
+                console.log('Removing interaction for:', current.owner);
+                return prev.slice(1);
+              });
+            }}
+          />
+        ))}
     </div>
   );
 };
