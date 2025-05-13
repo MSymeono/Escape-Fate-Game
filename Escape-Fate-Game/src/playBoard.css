@@ -1,0 +1,51 @@
+.stack-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-y: auto;
+}
+
+.stack-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.horizontal-stack {
+  display: flex;
+  overflow-x: auto;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 100%;
+  border: 1px solid #ccc;
+}
+
+.horizontal-stack > * {
+  flex: 0 0 auto;
+  width: 160px; /* Match your card width */
+  overflow: hidden;
+  white-space: normal; /* ✅ allow line wrapping */
+  text-overflow: ellipsis;
+}
+
+.effect-modal {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 2px solid black;
+  padding: 1.5rem;
+  z-index: 1000;
+  border-radius: 8px;
+}
