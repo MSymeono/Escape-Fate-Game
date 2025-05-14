@@ -8,6 +8,50 @@ type CardType = {
   Quantity: number;
   Priority: number | null;
 };
+const IndecisiveEffect = ({
+  discardIds,
+  cardLibrary,
+  onConfirm,
+}: {
+  discardIds: number[];
+  cardLibrary: CardType[];
+  onConfirm: (selected: CardType) => void;
+}) => {
+  const discardCards = discardIds
+    .map((id) => cardLibrary.find((c) => c.id === id))
+    .filter(Boolean) as CardType[];
+
+  const [selected, setSelected] = useState<CardType | null>(null);
+
+  return (
+    <div className='indecisive-effect'>
+      <h4>Select a card from the discard pile:</h4>
+      <div>
+        {' '}
+        Selected card:{' '}
+        {selected ? <strong>{selected.Name}</strong> : <em>None</em>}
+      </div>
+      <ul>
+        {discardCards.map((card, index) => (
+          <li
+            key={`${card.id}-${index}`}
+            onClick={() => setSelected(card)}
+            className={selected?.id === card.id ? 'selected' : ''}
+            style={{ cursor: 'pointer' }}
+          >
+            <strong>{card.Name}</strong>: {card.Text}
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={() => selected && onConfirm(selected)}
+        disabled={!selected}
+      >
+        Confirm
+      </button>
+    </div>
+  );
+};
 
 const WeaveEffect = ({
   topThreeIds,
@@ -42,12 +86,20 @@ const WeaveEffect = ({
     <div className='top-three'>
       <h4>Reorder the top 3 cards:</h4>
       <ul>
-        {orderedCards.map((card, i) => (
-          <li key={card.id}>
+        {[...orderedCards].reverse().map((card, i) => (
+          <li key={`${card.id}-${i}`}>
             <strong>{card.Name}</strong>: {card.Text}
             <div>
-              <button onClick={() => moveCard(i, 'up')}>Up</button>
-              <button onClick={() => moveCard(i, 'down')}>Down</button>
+              <button
+                onClick={() => moveCard(orderedCards.length - 1 - i, 'down')}
+              >
+                Up
+              </button>
+              <button
+                onClick={() => moveCard(orderedCards.length - 1 - i, 'up')}
+              >
+                Down
+              </button>
             </div>
           </li>
         ))}
@@ -61,7 +113,7 @@ const EffectModal = ({
   card,
   owner,
   context,
-  cardLibrary, // ✅ NEW PROP
+  cardLibrary,
   onComplete,
 }: {
   card: CardType;
@@ -73,6 +125,10 @@ const EffectModal = ({
   console.log('Rendering modal for', owner, 'with', context?.topThreeIds);
   const isWeave =
     card.Name?.toLowerCase() === 'weave' && Array.isArray(context?.topThreeIds);
+
+  const isIndecisive =
+    card.Name?.toLowerCase() === 'indecisive' &&
+    Array.isArray(context?.discardIds);
 
   return (
     <div className='effect-modal'>
@@ -86,6 +142,12 @@ const EffectModal = ({
           topThreeIds={context.topThreeIds}
           cardLibrary={cardLibrary}
           onConfirm={onComplete}
+        />
+      ) : isIndecisive ? (
+        <IndecisiveEffect
+          discardIds={context.discardIds}
+          cardLibrary={cardLibrary}
+          onConfirm={(selectedCard) => onComplete([selectedCard])}
         />
       ) : (
         <button onClick={() => onComplete()}>Done</button>
