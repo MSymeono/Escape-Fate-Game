@@ -3,6 +3,12 @@ import Card from './Card';
 import EffectModal from './effectModal';
 import './playBoard.css';
 
+type EffectHandler = (
+  card: Card,
+  owner: 'Player 1' | 'Player 2',
+  negatedPlayers: Set<'Player 1' | 'Player 2'>
+) => void;
+
 type CardType = {
   Name: string;
   Text: string;
@@ -21,6 +27,9 @@ type PlayBoardProps = {
   playZone1: PlayedCard[];
   playZone2: PlayedCard[];
   cardLibrary: CardType[];
+  effectHandlers: {
+    [key: number]: EffectHandler;
+  };
   nextCards: () => void;
   discardPile: number[];
   phase: string;
@@ -51,6 +60,7 @@ const PlayBoard = ({
   nextCards,
   discardPile,
   phase,
+  effectHandlers,
   playInteraction,
   setPlayInteraction,
 }: PlayBoardProps) => {
@@ -136,10 +146,11 @@ const PlayBoard = ({
             card={playInteraction[0].card}
             owner={playInteraction[0].owner}
             context={playInteraction[0].context}
+            effectHandlers={effectHandlers}
             cardLibrary={cardLibrary}
             onComplete={(newOrder) => {
               setPlayInteraction((prev) => {
-                const current = prev[0]; 
+                const current = prev[0];
                 const reorderedIds = newOrder?.map((c) => c.id) || [];
 
                 if (reorderedIds.length > 0) {

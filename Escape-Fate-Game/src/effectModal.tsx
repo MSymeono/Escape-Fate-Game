@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import './effectModal.css';
+type PlayedCard = { id: number; owner: 'Player 1' | 'Player 2' };
+
+type Card = {
+  Name: string;
+  Text: string;
+  id: number;
+  Quantity: number;
+  Priority: number;
+};
+
+type EffectHandler = (
+  card: Card,
+  owner: 'Player 1' | 'Player 2',
+  negatedPlayers: Set<'Player 1' | 'Player 2'>
+) => void;
 
 type CardType = {
   Name: string;
@@ -8,6 +23,69 @@ type CardType = {
   Quantity: number;
   Priority: number | null;
 };
+
+const NostalgicEffect = ({
+  playedCards,
+  effectHandlers,
+  playZone,
+  cardLibrary,
+  onConfirm,
+  owner,
+}: {
+  playedCards: CardType[];
+  cardLibrary: CardType[];
+  playZone: PlayedCard[];
+  effectHandlers: {
+    [key: number]: EffectHandler;
+  };
+  owner: 'Player 1' | 'Player 2';
+  onConfirm: () => void;
+}) => {
+  const [selectedNostalgic, setSelectedNostalgic] = useState<CardType | null>(
+    null
+  );
+  const handleConfirm = () => {
+    // console.log('handler', effectHandlers)
+    if (!selectedNostalgic) return;
+    onConfirm();
+    setTimeout(() => {
+      const handler = effectHandlers[selectedNostalgic.id];
+      if (handler) {
+        handler(selectedNostalgic as Card, owner, new Set());
+      }
+    }, 0);
+  };
+
+  return (
+    <div className='nostalgic-effect'>
+      <h4>Select a Card you have already played</h4>
+      <div>
+        Selected card:{' '}
+        {selectedNostalgic ? (
+          <strong>{selectedNostalgic.Name}</strong>
+        ) : (
+          <em>None</em>
+        )}
+      </div>
+      <ul>
+        {playedCards.map((card, index) => (
+          <li
+            key={`${card.id}-${index}`}
+            onClick={() => setSelectedNostalgic(card)}
+            className={selectedNostalgic?.id === card.id ? 'selected' : ''}
+            style={{ cursor: 'pointer' }}
+          >
+            <strong>{card.Name}</strong>: {card.Text}
+          </li>
+        ))}
+      </ul>
+      <button onClick={handleConfirm} disabled={!selectedNostalgic}>
+        Confirm
+      </button>
+    </div>
+  );
+};
+
 const IndecisiveEffect = ({
   discardIds,
   cardLibrary,
@@ -21,7 +99,9 @@ const IndecisiveEffect = ({
     .map((id) => cardLibrary.find((c) => c.id === id))
     .filter(Boolean) as CardType[];
 
-  const [selected, setSelected] = useState<CardType | null>(null);
+  const [selectedIndecisive, setSelectedIndecisive] = useState<CardType | null>(
+    null
+  );
 
   return (
     <div className='indecisive-effect'>
@@ -29,14 +109,18 @@ const IndecisiveEffect = ({
       <div>
         {' '}
         Selected card:{' '}
-        {selected ? <strong>{selected.Name}</strong> : <em>None</em>}
+        {selectedIndecisive ? (
+          <strong>{selectedIndecisive.Name}</strong>
+        ) : (
+          <em>None</em>
+        )}
       </div>
       <ul>
         {discardCards.map((card, index) => (
           <li
             key={`${card.id}-${index}`}
-            onClick={() => setSelected(card)}
-            className={selected?.id === card.id ? 'selected' : ''}
+            onClick={() => setSelectedIndecisive(card)}
+            className={selectedIndecisive?.id === card.id ? 'selected' : ''}
             style={{ cursor: 'pointer' }}
           >
             <strong>{card.Name}</strong>: {card.Text}
@@ -44,8 +128,8 @@ const IndecisiveEffect = ({
         ))}
       </ul>
       <button
-        onClick={() => selected && onConfirm(selected)}
-        disabled={!selected}
+        onClick={() => selectedIndecisive && onConfirm(selectedIndecisive)}
+        disabled={!selectedIndecisive}
       >
         Confirm
       </button>
@@ -114,12 +198,14 @@ const EffectModal = ({
   owner,
   context,
   cardLibrary,
+  effectHandlers,
   onComplete,
 }: {
   card: CardType;
   owner: 'Player 1' | 'Player 2';
   context: any;
   cardLibrary: CardType[];
+  effectHandlers: { [key: number]: EffectHandler };
   onComplete: (newState?: CardType[] | null) => void;
 }) => {
   console.log('Rendering modal for', owner, 'with', context?.topThreeIds);
@@ -129,6 +215,9 @@ const EffectModal = ({
   const isIndecisive =
     card.Name?.toLowerCase() === 'indecisive' &&
     Array.isArray(context?.discardIds);
+  const isNostalgic =
+    card.Name?.toLowerCase() === 'nostalgic' &&
+    Array.isArray(context?.playedCards);
 
   return (
     <div className='effect-modal'>
@@ -148,6 +237,15 @@ const EffectModal = ({
           discardIds={context.discardIds}
           cardLibrary={cardLibrary}
           onConfirm={(selectedCard) => onComplete([selectedCard])}
+        />
+      ) : isNostalgic ? (
+        <NostalgicEffect
+          playedCards={context.playedCards}
+          cardLibrary={cardLibrary}
+          playZone={context.playZone}
+          effectHandlers={effectHandlers}
+          owner={owner}
+          onConfirm={() => onComplete()}
         />
       ) : (
         <button onClick={() => onComplete()}>Done</button>
