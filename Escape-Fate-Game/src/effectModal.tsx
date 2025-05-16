@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './effectModal.css';
+
 type PlayedCard = { id: number; owner: 'Player 1' | 'Player 2' };
 
 type Card = {
@@ -24,6 +25,58 @@ type CardType = {
   Priority: number | null;
 };
 
+const ImpulsiveEffect = ({
+  topTwoIds,
+  cardLibrary,
+  onConfirm,
+}: {
+  topTwoIds: number[];
+  cardLibrary: CardType[];
+  onConfirm: (selectedCardIds: number[]) => void;
+}) => {
+  const topTwoCards = topTwoIds
+    .map((id) => cardLibrary.find((c) => c.id === id))
+    .filter(Boolean) as CardType[];
+
+  const [selectedImpulsive, setSelectedImpulsive] = useState<CardType | null>(
+    null
+  );
+
+  const handleConfirm = () => {
+    if (!selectedImpulsive) return;
+    onConfirm([selectedImpulsive.id]);
+  };
+
+  return (
+    <div className='impulsive-effect'>
+      <h4>Select a Card from the Top Two</h4>
+      <div>
+        Selected card:{' '}
+        {selectedImpulsive ? (
+          <strong>{selectedImpulsive.Name}</strong>
+        ) : (
+          <em>None</em>
+        )}
+      </div>
+      <ul>
+        {topTwoCards.map((card, index) => (
+          <li
+            key={`${card.id}-${index}`}
+            onClick={() => setSelectedImpulsive(card)}
+            className={selectedImpulsive?.id === card.id ? 'selected' : ''}
+            style={{ cursor: 'pointer' }}
+          >
+            <strong>{card.Name}</strong>: {card.Text}
+          </li>
+        ))}
+      </ul>
+      <button onClick={handleConfirm} disabled={!selectedImpulsive}>
+        Confirm
+      </button>
+    </div>
+  );
+};
+
 const NostalgicEffect = ({
   playedCards,
   effectHandlers,
@@ -35,17 +88,15 @@ const NostalgicEffect = ({
   playedCards: CardType[];
   cardLibrary: CardType[];
   playZone: PlayedCard[];
-  effectHandlers: {
-    [key: number]: EffectHandler;
-  };
+  effectHandlers: { [key: number]: EffectHandler };
   owner: 'Player 1' | 'Player 2';
   onConfirm: () => void;
 }) => {
   const [selectedNostalgic, setSelectedNostalgic] = useState<CardType | null>(
     null
   );
+
   const handleConfirm = () => {
-    // console.log('handler', effectHandlers)
     if (!selectedNostalgic) return;
     onConfirm();
     setTimeout(() => {
@@ -107,7 +158,6 @@ const IndecisiveEffect = ({
     <div className='indecisive-effect'>
       <h4>Select a card from the discard pile:</h4>
       <div>
-        {' '}
         Selected card:{' '}
         {selectedIndecisive ? (
           <strong>{selectedIndecisive.Name}</strong>
@@ -206,18 +256,19 @@ const EffectModal = ({
   context: any;
   cardLibrary: CardType[];
   effectHandlers: { [key: number]: EffectHandler };
-  onComplete: (newState?: CardType[] | null) => void;
+  onComplete: (result?: any) => void;
 }) => {
-  console.log('Rendering modal for', owner, 'with', context?.topThreeIds);
   const isWeave =
     card.Name?.toLowerCase() === 'weave' && Array.isArray(context?.topThreeIds);
-
   const isIndecisive =
     card.Name?.toLowerCase() === 'indecisive' &&
     Array.isArray(context?.discardIds);
   const isNostalgic =
     card.Name?.toLowerCase() === 'nostalgic' &&
     Array.isArray(context?.playedCards);
+  const isImpulsive =
+    card.Name?.toLowerCase() === 'impulsive' &&
+    Array.isArray(context?.topTwoIds);
 
   return (
     <div className='effect-modal'>
@@ -246,6 +297,12 @@ const EffectModal = ({
           effectHandlers={effectHandlers}
           owner={owner}
           onConfirm={() => onComplete()}
+        />
+      ) : isImpulsive ? (
+        <ImpulsiveEffect
+          topTwoIds={context.topTwoIds}
+          cardLibrary={cardLibrary}
+          onConfirm={(selectedCardIds) => onComplete(selectedCardIds)}
         />
       ) : (
         <button onClick={() => onComplete()}>Done</button>

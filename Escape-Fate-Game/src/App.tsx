@@ -12,10 +12,14 @@ type Card = {
   Text: string;
   id: number;
   Quantity: number;
-  Priority: number;
+  Priority: number | null;
 };
 
-type PlayedCard = { id: number; owner: 'Player 1' | 'Player 2' };
+type PlayedCard = {
+  id: number;
+  owner: 'Player 1' | 'Player 2';
+  multiplier?: number;
+};
 type EffectHandler = (
   card: Card,
   owner: 'Player 1' | 'Player 2',
@@ -183,8 +187,8 @@ function App() {
   // Here come the useStates
   // the deckArray consists of the draftable cards in the game. These are tied to the ids of the cards in the cardLibrary above.
   const [deckArray, setDeckArray] = useState([
-    1, 3, 3, 4, 5, 7, 8, 10, 10, 10, 10, 11, 12, 13, 14, 14, 15, 16, 17, 18, 2,
-    6, 19, 9,
+    1, 3, 3, 5, 7, 8, 10, 10, 10, 10, 11, 12, 13, 14, 14, 15, 16, 17, 18, 2, 6,
+    19, 9, 4,
   ]);
   // Active player is set to determine whose turn it is to draft. We'll use the S (snake) method, meaning player 1 drafts, then player 2 drafts twice, then player 1 drafts twice etc.
   const [activePlayer, setAP] = useState('Player 1');
@@ -207,6 +211,13 @@ function App() {
   const [negatedPlayers, setNegatedPlayers] = useState<
     Set<'Player 1' | 'Player 2'>
   >(new Set());
+  const [doubledPlayers, setDoubledPlayers] = useState<
+    Set<'Player 1' | 'Player 2'>
+  >(new Set());
+  const [skippedPlayers, setSkippedPlayers] = useState<
+    Set<'Player 1' | 'Player 2'>
+  >(new Set());
+
   const [playInteraction, setPlayInteraction] = useState<
     {
       card: Card;
@@ -215,13 +226,28 @@ function App() {
     }[]
   >([]);
 
-  const queueCard = (id: number, owner: 'Player 1' | 'Player 2') => {
+  const queueCard = (
+    id: number,
+    owner: 'Player 1' | 'Player 2',
+    multiplier: number = doubledPlayers.has(owner) ? 2 : 1
+  ) => {
+    if (multiplier <= 0) return;
+    if (multiplier === 2 && doubledPlayers.has(owner)) {
+      setDoubledPlayers((prev) => {
+        const next = new Set(prev);
+        next.delete(owner);
+        return next;
+      });
+    }
     if (owner === 'Player 1') {
       setplayZone1((prev) => [...prev, { id, owner }]);
       setplayer1Deck((prev) => prev.slice(0, -1));
     } else {
       setplayZone2((prev) => [...prev, { id, owner }]);
       setplayer2Deck((prev) => prev.slice(0, -1));
+    }
+    if (multiplier > 1) {
+      setTimeout(() => queueCard(id, owner, multiplier - 1), 0);
     }
   };
 
@@ -386,6 +412,24 @@ function App() {
         clearNegation(owner);
         return;
       }
+      const topTwoIds =
+        owner === 'Player 1' ? player1Deck.slice(-2) : player2Deck.slice(-2);
+
+      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
+      if (owner === 'Player 1') {
+      }
+
+      setNegatedPlayers((prev) => new Set(prev).add(target));
+      setPlayInteraction((prev) => [
+        ...prev,
+        {
+          card,
+          owner,
+          context: {
+            topTwoIds,
+          },
+        },
+      ]);
     },
     //Indecisive
     5: (card, owner, localNegated) => {
@@ -455,12 +499,18 @@ function App() {
         clearNegation(owner);
         return;
       }
+
       const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
       const targetDeck = target === 'Player 1' ? player1Deck : player2Deck;
       const top = targetDeck[targetDeck.length - 1];
-      if (top !== undefined) {
-        queueCard(top, target);
-        setTimeout(() => queueCard(top, target), 0);
+      const topCard = cardLibrary.find((c) => c.id === top);
+
+      if (topCard) {
+        const handler = effectHandlers[topCard.id];
+        handler(topCard, target, new Set());
+        setTimeout(() => {
+          handler(topCard, target, new Set());
+        }, 0);
       }
     },
     //Powerful
@@ -469,32 +519,20 @@ function App() {
         clearNegation(owner);
         return;
       }
-      if (owner === 'Player 1') {
-        const deck = [...player1Deck];
-        if (deck.length >= 2) {
-          queueCard(deck[deck.length - 1], 'Player 1');
-          setTimeout(() => queueCard(deck[deck.length - 2], 'Player 1'), 0);
-        } else if (deck.length === 1) {
-          queueCard(deck[deck.length - 1], 'Player 1');
-        }
-      }
-
-      if (owner === 'Player 2') {
-        const deck = [...player2Deck];
-        if (deck.length >= 2) {
-          queueCard(deck[deck.length - 1], 'Player 2');
-          setTimeout(() => queueCard(deck[deck.length - 2], 'Player 2'), 0);
-        } else if (deck.length === 1) {
-          queueCard(deck[deck.length - 1], 'Player 2');
-        }
-      }
+      const deck = owner === 'Player 1' ? player1Deck : player2Deck;
+      const topTwo = [...deck].slice(-2);
+      topTwo.reverse().forEach((id, i) => {
+        setTimeout(() => queueCard(id, owner), i * 10);
+      });
     },
-    // Rapid Not Done
+    // Rapid
     13: (card, owner, localNegated) => {
       if (localNegated.has(owner)) {
         clearNegation(owner);
         return;
       }
+      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
+      setSkippedPlayers((prev) => new Set(prev).add(target));
     },
     // Reckless
     14: (card, owner, localNegated) => {
@@ -502,31 +540,57 @@ function App() {
         clearNegation(owner);
         return;
       }
+
       setNegatedPlayers((prev) => new Set(prev).add(owner));
+
       const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
       const targetDeck = target === 'Player 1' ? player1Deck : player2Deck;
-      const top = targetDeck[targetDeck.length - 1];
-      if (top !== undefined) {
-        queueCard(top, target);
+      const topCards = [...targetDeck].slice(-2); // grab up to 2 top cards
+
+      // Determine how many to play based on whether this owner is doubled
+      const count = doubledPlayers.has(owner) ? 2 : 1;
+      const cardsToPlay = topCards.slice(-count);
+
+      // Clear the doubling effect after using it
+      if (doubledPlayers.has(owner)) {
+        setDoubledPlayers((prev) => {
+          const next = new Set(prev);
+          next.delete(owner);
+          return next;
+        });
       }
+
+      cardsToPlay.forEach((id) => {
+        if (id === undefined) return;
+
+        if (target === 'Player 1') {
+          setplayZone1((prev) => [...prev, { id, owner: 'Player 1' }]);
+          setplayer1Deck((prev) => prev.slice(0, -1));
+        } else {
+          setplayZone2((prev) => [...prev, { id, owner: 'Player 2' }]);
+          setplayer2Deck((prev) => prev.slice(0, -1));
+        }
+      });
     },
     //Resourceful
     15: (card, owner, localNegated) => {
       return;
     },
-    //Strategic Not Done
+    //Strategic
     16: (card, owner, localNegated) => {
       if (localNegated.has(owner)) {
         clearNegation(owner);
         return;
       }
+      setDoubledPlayers((prev) => new Set(prev).add(owner));
     },
-    //Tempered Not Done
+    //Tempered
     17: (card, owner, localNegated) => {
       if (localNegated.has(owner)) {
         clearNegation(owner);
         return;
       }
+      setSkippedPlayers((prev) => new Set(prev).add(owner));
     },
     //Tranquil
     18: (card, owner, localNegated) => {
@@ -696,16 +760,32 @@ function App() {
   };
   // go to the next one
   const nextCards = () => {
-    const p1Top = player1Deck[player1Deck.length - 1];
-    const p2Top = player2Deck[player2Deck.length - 1];
-    if (p1Top !== undefined) {
-      setplayZone1((prev) => [...prev, { id: p1Top, owner: 'Player 1' }]);
-      setplayer1Deck((prev) => prev.slice(0, -1));
+    if (skippedPlayers.has('Player 1')) {
+      setSkippedPlayers((prev) => {
+        const next = new Set(prev);
+        next.delete('Player 1');
+        return next;
+      });
+    } else {
+      const p1Top = player1Deck[player1Deck.length - 1];
+      if (p1Top !== undefined) {
+        setplayZone1((prev) => [...prev, { id: p1Top, owner: 'Player 1' }]);
+        setplayer1Deck((prev) => prev.slice(0, -1));
+      }
     }
 
-    if (p2Top !== undefined) {
-      setplayZone2((prev) => [...prev, { id: p2Top, owner: 'Player 2' }]);
-      setplayer2Deck((prev) => prev.slice(0, -1));
+    if (skippedPlayers.has('Player 2')) {
+      setSkippedPlayers((prev) => {
+        const next = new Set(prev);
+        next.delete('Player 2');
+        return next;
+      });
+    } else {
+      const p2Top = player2Deck[player2Deck.length - 1];
+      if (p2Top !== undefined) {
+        setplayZone2((prev) => [...prev, { id: p2Top, owner: 'Player 2' }]);
+        setplayer2Deck((prev) => prev.slice(0, -1));
+      }
     }
   };
 
@@ -715,6 +795,63 @@ function App() {
       updated.delete(owner);
       return updated;
     });
+  };
+  const handleInteractionComplete = (result: any) => {
+    const { card, owner, context } = playInteraction[0];
+
+    if (card.Name === 'Impulsive') {
+      const selectedId = result?.[0];
+      const unselectedId = context.topTwoIds.find(
+        (id: number) => id !== selectedId
+      );
+
+      if (owner === 'Player 1') {
+        setplayer1Deck((prev) => [
+          ...prev.slice(0, -2),
+          ...(unselectedId !== undefined ? [unselectedId] : []),
+        ]);
+        setplayZone1((prev) => [...prev, { id: selectedId, owner }]);
+      } else {
+        setplayer2Deck((prev) => [
+          ...prev.slice(0, -2),
+          ...(unselectedId !== undefined ? [unselectedId] : []),
+        ]);
+        setplayZone2((prev) => [...prev, { id: selectedId, owner }]);
+      }
+    } else if (
+      card.Name === 'Weave' &&
+      Array.isArray(result) &&
+      result.every((r: any) => typeof r.id === 'number')
+    ) {
+      const reorderedIds = result.map((c: Card) => c.id);
+      const sliceSize = reorderedIds.length;
+
+      if (owner === 'Player 1') {
+        setplayer1Deck((prev) => {
+          const rest = prev.slice(0, prev.length - sliceSize);
+          return [...rest, ...reorderedIds];
+        });
+      } else {
+        setplayer2Deck((prev) => {
+          const rest = prev.slice(0, prev.length - sliceSize);
+          return [...rest, ...reorderedIds];
+        });
+      }
+    } else if (
+      card.Name === 'Indecisive' &&
+      Array.isArray(result) &&
+      result.length === 1 &&
+      typeof result[0].id === 'number'
+    ) {
+      const selectedId = result[0].id;
+
+      if (owner === 'Player 1') {
+        setplayer1Deck((prev) => [...prev, selectedId]);
+      } else {
+        setplayer2Deck((prev) => [...prev, selectedId]);
+      }
+    }
+    setPlayInteraction((prev) => prev.slice(1));
   };
 
   return (
@@ -745,6 +882,7 @@ function App() {
           />
         ) : (
           <PlayBoard
+            onComplete={handleInteractionComplete}
             player1Deck={player1Deck}
             setplayer1Deck={setplayer1Deck}
             setplayer2Deck={setplayer2Deck}

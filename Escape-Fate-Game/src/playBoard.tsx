@@ -47,6 +47,7 @@ type PlayBoardProps = {
       }[]
     >
   >;
+  onComplete: (result?: any) => void;
 };
 
 const PlayBoard = ({
@@ -62,6 +63,7 @@ const PlayBoard = ({
   phase,
   effectHandlers,
   playInteraction,
+  onComplete,
   setPlayInteraction,
 }: PlayBoardProps) => {
   const [showStack, setShowStack] = useState(false);
@@ -148,35 +150,9 @@ const PlayBoard = ({
             context={playInteraction[0].context}
             effectHandlers={effectHandlers}
             cardLibrary={cardLibrary}
-            onComplete={(newOrder) => {
-              setPlayInteraction((prev) => {
-                const current = prev[0];
-                const reorderedIds = newOrder?.map((c) => c.id) || [];
-
-                if (reorderedIds.length > 0) {
-                  if (current.owner === 'Player 1') {
-                    setplayer1Deck((prev) => {
-                      const rest = prev.slice(
-                        0,
-                        prev.length - reorderedIds.length
-                      );
-                      return [...rest, ...reorderedIds];
-                    });
-                  } else {
-                    setplayer2Deck((prev) => {
-                      const rest = prev.slice(
-                        0,
-                        prev.length - reorderedIds.length
-                      );
-                      return [...rest, ...reorderedIds];
-                    });
-                  }
-                }
-
-                console.log('Removing interaction for:', current.owner);
-                return prev.slice(1);
-              });
-            }}
+            setplayer1Deck={setplayer1Deck}
+            setplayer2Deck={setplayer2Deck}
+            onComplete={onComplete}
           />
         ))}
     </div>
