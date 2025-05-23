@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import './App.css';
 import Card from './Card';
-import { useEffect } from 'react';
 import DraftBoard from './draftBoard';
 import PlayBoard from './playBoard';
 import RulesOverlay from './rulesOverlay';
 import CardList from './cardList';
+import GameLog from './gameLog';
 
 type Card = {
   Name: string;
@@ -35,6 +35,7 @@ function App() {
       id: 1,
       Quantity: 1,
       Priority: 2,
+      Modal: false,
     },
     {
       Name: 'Covetous',
@@ -42,6 +43,7 @@ function App() {
       id: 2,
       Quantity: 1,
       Priority: 13,
+      Modal: false,
     },
     {
       Name: 'Deceitful',
@@ -49,6 +51,7 @@ function App() {
       id: 3,
       Quantity: 2,
       Priority: 12,
+      Modal: false,
     },
     {
       Name: 'Impulsive',
@@ -56,6 +59,7 @@ function App() {
       id: 4,
       Quantity: 1,
       Priority: 7,
+      Modal: true,
     },
     {
       Name: 'Indecisive',
@@ -63,6 +67,7 @@ function App() {
       id: 5,
       Quantity: 1,
       Priority: 15,
+      Modal: true,
     },
     {
       Name: 'Irreverent',
@@ -70,6 +75,7 @@ function App() {
       id: 6,
       Quantity: 1,
       Priority: 1,
+      Modal: false,
     },
     {
       Name: 'Free',
@@ -77,6 +83,7 @@ function App() {
       id: 7,
       Quantity: 1,
       Priority: null,
+      Modal: false,
     },
     {
       Name: 'Hasty',
@@ -84,6 +91,7 @@ function App() {
       id: 8,
       Quantity: 1,
       Priority: 10,
+      Modal: false,
     },
     {
       Name: 'Nostalgic',
@@ -91,6 +99,7 @@ function App() {
       id: 9,
       Quantity: 1,
       Priority: 3,
+      Modal: true,
     },
     {
       Name: 'Patient',
@@ -98,6 +107,7 @@ function App() {
       id: 10,
       Quantity: 4,
       Priority: null,
+      Modal: false,
     },
     {
       Name: 'Plunderous',
@@ -105,6 +115,7 @@ function App() {
       id: 11,
       Quantity: 1,
       Priority: 6,
+      Modal: false,
     },
     {
       Name: 'Powerful',
@@ -112,6 +123,7 @@ function App() {
       id: 12,
       Quantity: 1,
       Priority: 8,
+      Modal: false,
     },
     {
       Name: 'Rapid',
@@ -119,6 +131,7 @@ function App() {
       id: 13,
       Quantity: 1,
       Priority: null,
+      Modal: false,
     },
     {
       Name: 'Reckless',
@@ -126,6 +139,7 @@ function App() {
       id: 14,
       Quantity: 2,
       Priority: 5,
+      Modal: false,
     },
     {
       Name: 'Resourceful',
@@ -133,6 +147,7 @@ function App() {
       id: 15,
       Quantity: 1,
       Priority: null,
+      Modal: false,
     },
     {
       Name: 'Strategic',
@@ -140,6 +155,7 @@ function App() {
       id: 16,
       Quantity: 1,
       Priority: null,
+      Modal: false,
     },
     {
       Name: 'Tempered',
@@ -147,6 +163,7 @@ function App() {
       id: 17,
       Quantity: 1,
       Priority: null,
+      Modal: false,
     },
     {
       Name: 'Tranquil',
@@ -154,6 +171,7 @@ function App() {
       id: 18,
       Quantity: 1,
       Priority: 14,
+      Modal: false,
     },
     {
       Name: 'Wisened',
@@ -161,6 +179,7 @@ function App() {
       id: 19,
       Quantity: 1,
       Priority: 11,
+      Modal: false,
     },
     {
       Name: 'Weave',
@@ -168,6 +187,7 @@ function App() {
       id: 20,
       Quantity: 2,
       Priority: 4,
+      Modal: true,
     },
     {
       Name: 'Measure',
@@ -175,6 +195,7 @@ function App() {
       id: 21,
       Quantity: 2,
       Priority: 9,
+      Modal: false,
     },
     {
       Name: 'Cut',
@@ -182,6 +203,7 @@ function App() {
       id: 22,
       Quantity: 2,
       Priority: 16,
+      Modal: false,
     },
   ];
   // Here come the useStates
@@ -207,6 +229,12 @@ function App() {
   //rules and cardsList below are two overlays that respectively show the rules and the full list of cards.
   const [rules, setRules] = useState<'On' | 'Off'>('Off');
   const [cardsList, setCardList] = useState<'On' | 'Off'>('Off');
+  const [gameLogOverlay, setGameLogOverlay] = useState<'On' | 'Off'>('Off');
+  const [gameLog, setGameLog] = useState<string[]>([]);
+
+  const [turn, setTurn] = useState<number>(1);
+  const [turnEnd, setTurnEnd] = useState<number>(0);
+  const [playedThisTurn, setPlayedThisTurn] = useState<boolean>(false);
 
   const [negatedPlayers, setNegatedPlayers] = useState<
     Set<'Player 1' | 'Player 2'>
@@ -674,10 +702,10 @@ function App() {
       }
     },
   };
+  const modalResolvers = useRef<(() => void)[]>([]);
   useEffect(() => {
     if (phase !== 'play') return;
-    console.log('p1 deck', player1Deck);
-    console.log('p2 deck', player2Deck);
+
     const latestP1 = playZone1[playZone1.length - 1];
     const latestP2 = playZone2[playZone2.length - 1];
     const allPlayed = [latestP1, latestP2].filter(Boolean);
@@ -691,14 +719,39 @@ function App() {
       .sort((a, b) => (a.card.Priority ?? 99) - (b.card.Priority ?? 99));
 
     const localNegated = new Set(negatedPlayers);
+    const modalPromises: Promise<void>[] = [];
 
     sorted.forEach(({ card, owner }) => {
       const handler = effectHandlers[card.id];
-      if (handler) {
+      if (!handler) return;
+
+      if (card.Modal) {
+        modalPromises.push(
+          new Promise((resolve) => {
+            modalResolvers.current.push(resolve);
+            handler(card, owner, localNegated);
+          })
+        );
+      } else {
         handler(card, owner, localNegated);
       }
     });
-  }, [playZone1, playZone2]);
+
+    if (modalPromises.length > 0) {
+      Promise.all(modalPromises).then(() => setTurnEnd(turn));
+    } else {
+      setTurnEnd(turn);
+    }
+  }, [turn]);
+
+  useEffect(() => {
+    if (playedThisTurn === true) {
+      setPlayedThisTurn(false);
+      return;
+    }
+    //card effect
+  }, [playZone1]);
+  useEffect(() => {}, [playZone2]);
 
   // shuffling algorithm. Start at the end of the deckArray(drafting pool), pick a random number between 0 and 23 and swap our current position with it. Keep going backwards until we hit the first element in the array and we know that every element has been moved at least once.
   const shuffle = () => {
@@ -715,6 +768,7 @@ function App() {
     }
     setDeckArray(tempArray);
     console.log(tempArray);
+    setGameLog((prev) => [...prev, 'shuffled deck']);
   };
 
   // pull the first 3 elements from the deckArray and put them into the draftArray.
@@ -750,7 +804,9 @@ function App() {
 
         console.log(p2Deck, activePlayer, 'p2');
       }
+
       // removes the card that just got drafted from the draftArray
+      if(card.id===15){setGameLog((prev)=>[...prev, `${activePlayer} drafted Resourceful. The last card will be added to their deck, not discarded.`])}
       setDraftArray((prev) => {
         const index = prev.indexOf(card.id);
         if (index === -1) return prev;
@@ -787,6 +843,7 @@ function App() {
         setplayer2Deck((prev) => prev.slice(0, -1));
       }
     }
+    setTurn((t) => t + 1);
   };
 
   const clearNegation = (owner: 'Player 1' | 'Player 2') => {
@@ -852,6 +909,9 @@ function App() {
       }
     }
     setPlayInteraction((prev) => prev.slice(1));
+
+    const resolver = modalResolvers.current.pop();
+    if (resolver) resolver();
   };
 
   return (
@@ -867,6 +927,12 @@ function App() {
           cardLibrary={cardLibrary}
           onClose={() => setCardList('Off')}
         />
+      )}
+      {gameLogOverlay === 'Off' && (
+        <button onClick={() => setGameLogOverlay('On')}>Game Log</button>
+      )}
+      {gameLogOverlay === 'On' && (
+        <GameLog gameLog={gameLog} onClose={() => setGameLogOverlay('Off')} />
       )}
       <>
         {phase === 'draft' ? (
