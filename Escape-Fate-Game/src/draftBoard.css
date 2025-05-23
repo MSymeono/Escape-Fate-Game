@@ -1,0 +1,29 @@
+.buttons h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.player1-turn {
+  color: royalblue;
+  font-weight: bold;
+}
+
+.player2-turn {
+  color: crimson;
+  font-weight: bold;
+}
+
+.card-grid {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.indivButton button {
+  padding: 0.5rem 1rem;
+  margin: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+}

@@ -18,6 +18,7 @@ type Card = {
 type PlayedCard = {
   id: number;
   owner: 'Player 1' | 'Player 2';
+  name: string;
   multiplier?: number;
 };
 type EffectHandler = (
@@ -231,6 +232,7 @@ function App() {
   const [cardsList, setCardList] = useState<'On' | 'Off'>('Off');
   const [gameLogOverlay, setGameLogOverlay] = useState<'On' | 'Off'>('Off');
   const [gameLog, setGameLog] = useState<string[]>([]);
+  const [resourcefulDrafted, setResourcefulDrafted] = useState<boolean>(false);
 
   const [turn, setTurn] = useState<number>(1);
   const [turnEnd, setTurnEnd] = useState<number>(0);
@@ -254,30 +256,30 @@ function App() {
     }[]
   >([]);
 
-  const queueCard = (
-    id: number,
-    owner: 'Player 1' | 'Player 2',
-    multiplier: number = doubledPlayers.has(owner) ? 2 : 1
-  ) => {
-    if (multiplier <= 0) return;
-    if (multiplier === 2 && doubledPlayers.has(owner)) {
-      setDoubledPlayers((prev) => {
-        const next = new Set(prev);
-        next.delete(owner);
-        return next;
-      });
-    }
-    if (owner === 'Player 1') {
-      setplayZone1((prev) => [...prev, { id, owner }]);
-      setplayer1Deck((prev) => prev.slice(0, -1));
-    } else {
-      setplayZone2((prev) => [...prev, { id, owner }]);
-      setplayer2Deck((prev) => prev.slice(0, -1));
-    }
-    if (multiplier > 1) {
-      setTimeout(() => queueCard(id, owner, multiplier - 1), 0);
-    }
-  };
+  // const queueCard = (
+  //   id: number,
+  //   owner: 'Player 1' | 'Player 2',
+  //   multiplier: number = doubledPlayers.has(owner) ? 2 : 1
+  // ) => {
+  //   if (multiplier <= 0) return;
+  //   if (multiplier === 2 && doubledPlayers.has(owner)) {
+  //     setDoubledPlayers((prev) => {
+  //       const next = new Set(prev);
+  //       next.delete(owner);
+  //       return next;
+  //     });
+  //   }
+  //   if (owner === 'Player 1') {
+  //     setplayZone1((prev) => [...prev, { id, owner }]);
+  //     setplayer1Deck((prev) => prev.slice(0, -1));
+  //   } else {
+  //     setplayZone2((prev) => [...prev, { id, owner }]);
+  //     setplayer2Deck((prev) => prev.slice(0, -1));
+  //   }
+  //   if (multiplier > 1) {
+  //     setTimeout(() => queueCard(id, owner, multiplier - 1), 0);
+  //   }
+  // };
 
   function partition<T>(arr: T[], predicate: (item: T) => boolean): [T[], T[]] {
     const truthy: T[] = [];
@@ -387,14 +389,17 @@ function App() {
         clearNegation(owner);
         return;
       }
-
+      const target = owner === 'Player 1' ? 'Player2' : 'Player 1';
       if (owner === 'Player 1') {
         const targetZone = [...playZone2];
         const index = targetZone.length - 2;
         if (index < 0) return;
 
         const stolen = targetZone[index];
-
+        setGameLog((prev) => [
+          ...prev,
+          `${owner} stole ${target}'s ${stolen.name} using Covetous.`,
+        ]);
         setplayer1Deck((deck) => [...deck, stolen.id]);
         setplayZone2((prev) => prev.filter((_, i) => i !== index));
         setNegatedPlayers((neg) => new Set(neg).add('Player 1'));
@@ -806,7 +811,15 @@ function App() {
       }
 
       // removes the card that just got drafted from the draftArray
-      if(card.id===15){setGameLog((prev)=>[...prev, `${activePlayer} drafted Resourceful. The last card will be added to their deck, not discarded.`])}
+      if (card.id === 15) {
+        setResourcefulDrafted(true);
+        setGameLog((prev) => [
+          ...prev,
+          `${activePlayer} drafted Resourceful. The last card will be added to their deck, not discarded.`,
+        ]);
+      } else {
+        setResourcefulDrafted(false);
+      }
       setDraftArray((prev) => {
         const index = prev.indexOf(card.id);
         if (index === -1) return prev;
@@ -824,8 +837,17 @@ function App() {
       });
     } else {
       const p1Top = player1Deck[player1Deck.length - 1];
+      const card = cardLibrary.find((c) => c.id === p1Top);
       if (p1Top !== undefined) {
-        setplayZone1((prev) => [...prev, { id: p1Top, owner: 'Player 1' }]);
+        setplayZone1((prev) => [
+          ...prev,
+          {
+            id: p1Top,
+            owner: 'Player 1',
+            name: card!.Name,
+            priority: card?.Priority,
+          },
+        ]);
         setplayer1Deck((prev) => prev.slice(0, -1));
       }
     }
@@ -838,8 +860,17 @@ function App() {
       });
     } else {
       const p2Top = player2Deck[player2Deck.length - 1];
+      const card = cardLibrary.find((c) => c.id === p2Top);
       if (p2Top !== undefined) {
-        setplayZone2((prev) => [...prev, { id: p2Top, owner: 'Player 2' }]);
+        setplayZone2((prev) => [
+          ...prev,
+          {
+            id: p2Top,
+            owner: 'Player 2',
+            name: card!.Name,
+            priority: card?.Priority,
+          },
+        ]);
         setplayer2Deck((prev) => prev.slice(0, -1));
       }
     }
@@ -861,19 +892,42 @@ function App() {
       const unselectedId = context.topTwoIds.find(
         (id: number) => id !== selectedId
       );
+      const selectedCard = cardLibrary.find((c) => c.id === selectedId);
 
-      if (owner === 'Player 1') {
-        setplayer1Deck((prev) => [
-          ...prev.slice(0, -2),
-          ...(unselectedId !== undefined ? [unselectedId] : []),
+      if (selectedCard) {
+        if (owner === 'Player 1') {
+          setplayer1Deck((prev) => [
+            ...prev.slice(0, -2),
+            ...(unselectedId !== undefined ? [unselectedId] : []),
+          ]);
+          setplayZone1((prev) => [
+            ...prev,
+            {
+              id: selectedCard.id,
+              owner,
+              name: selectedCard.Name,
+              priority: selectedCard.Priority ?? undefined,
+            },
+          ]);
+        } else {
+          setplayer2Deck((prev) => [
+            ...prev.slice(0, -2),
+            ...(unselectedId !== undefined ? [unselectedId] : []),
+          ]);
+          setplayZone2((prev) => [
+            ...prev,
+            {
+              id: selectedCard.id,
+              owner,
+              name: selectedCard.Name,
+              priority: selectedCard.Priority ?? undefined,
+            },
+          ]);
+        }
+        setGameLog((prev) => [
+          ...prev,
+          `${owner} played ${selectedCard.Name} using Impulsive.`,
         ]);
-        setplayZone1((prev) => [...prev, { id: selectedId, owner }]);
-      } else {
-        setplayer2Deck((prev) => [
-          ...prev.slice(0, -2),
-          ...(unselectedId !== undefined ? [unselectedId] : []),
-        ]);
-        setplayZone2((prev) => [...prev, { id: selectedId, owner }]);
       }
     } else if (
       card.Name === 'Weave' &&
@@ -894,6 +948,10 @@ function App() {
           return [...rest, ...reorderedIds];
         });
       }
+      setGameLog((prev) => [
+        ...prev,
+        `${owner} wove the top ${sliceSize} cards of their deck.`,
+      ]);
     } else if (
       card.Name === 'Indecisive' &&
       Array.isArray(result) &&
@@ -901,15 +959,47 @@ function App() {
       typeof result[0].id === 'number'
     ) {
       const selectedId = result[0].id;
+      const selectedCard = cardLibrary.find((c) => c.id === selectedId);
+      if (selectedCard) {
+        if (owner === 'Player 1') {
+          setplayer1Deck((prev) => [...prev, selectedId]);
+        } else {
+          setplayer2Deck((prev) => [...prev, selectedId]);
+        }
+        setGameLog((prev) => [
+          ...prev,
+          `Indecisive added ${selectedCard.Name} to ${owner}'s deck.`,
+        ]);
+      }
+    } else if (
+      card.Name === 'Nostalgic' &&
+      Array.isArray(result) &&
+      result.length === 1 &&
+      typeof result[0].id === 'number'
+    ) {
+      const selectedId = result[0].id;
+      const selectedCard = cardLibrary.find((c) => c.id === selectedId);
+      if (selectedCard) {
+        const playedCard = {
+          id: selectedCard.id,
+          owner,
+          name: selectedCard.Name,
+          priority: selectedCard.Priority ?? undefined,
+        };
 
-      if (owner === 'Player 1') {
-        setplayer1Deck((prev) => [...prev, selectedId]);
-      } else {
-        setplayer2Deck((prev) => [...prev, selectedId]);
+        if (owner === 'Player 1') {
+          setplayZone1((prev) => [...prev, playedCard]);
+        } else {
+          setplayZone2((prev) => [...prev, playedCard]);
+        }
+        setGameLog((prev) => [
+          ...prev,
+          `${owner} replayed ${selectedCard.Name} using Nostalgic .`,
+        ]);
       }
     }
-    setPlayInteraction((prev) => prev.slice(1));
 
+    setPlayInteraction((prev) => prev.slice(1));
     const resolver = modalResolvers.current.pop();
     if (resolver) resolver();
   };
@@ -945,6 +1035,7 @@ function App() {
             onShuffle={shuffle}
             phase={phase}
             onDeal={deal}
+            resourcefulDrafted={resourcefulDrafted}
           />
         ) : (
           <PlayBoard
