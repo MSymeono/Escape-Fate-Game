@@ -256,30 +256,38 @@ function App() {
     }[]
   >([]);
 
-  // const queueCard = (
-  //   id: number,
-  //   owner: 'Player 1' | 'Player 2',
-  //   multiplier: number = doubledPlayers.has(owner) ? 2 : 1
-  // ) => {
-  //   if (multiplier <= 0) return;
-  //   if (multiplier === 2 && doubledPlayers.has(owner)) {
-  //     setDoubledPlayers((prev) => {
-  //       const next = new Set(prev);
-  //       next.delete(owner);
-  //       return next;
-  //     });
-  //   }
-  //   if (owner === 'Player 1') {
-  //     setplayZone1((prev) => [...prev, { id, owner }]);
-  //     setplayer1Deck((prev) => prev.slice(0, -1));
-  //   } else {
-  //     setplayZone2((prev) => [...prev, { id, owner }]);
-  //     setplayer2Deck((prev) => prev.slice(0, -1));
-  //   }
-  //   if (multiplier > 1) {
-  //     setTimeout(() => queueCard(id, owner, multiplier - 1), 0);
-  //   }
-  // };
+  const queueCard = (
+    id: number,
+    owner: 'Player 1' | 'Player 2',
+    multiplier: number = doubledPlayers.has(owner) ? 2 : 1
+  ) => {
+    if (multiplier <= 0) return;
+    const card = cardLibrary.find((c) => c.id === id);
+    if (!card) return;
+    if (multiplier === 2 && doubledPlayers.has(owner)) {
+      setDoubledPlayers((prev) => {
+        const next = new Set(prev);
+        next.delete(owner);
+        return next;
+      });
+    }
+    const playedCard = {
+      id: card.id,
+      owner,
+      name: card.Name,
+      priority: card.Priority ?? undefined,
+    };
+    if (owner === 'Player 1') {
+      setplayZone1((prev) => [...prev, playedCard]);
+      setplayer1Deck((prev) => prev.slice(0, -1));
+    } else {
+      setplayZone2((prev) => [...prev, playedCard]);
+      setplayer2Deck((prev) => prev.slice(0, -1));
+    }
+    if (multiplier > 1) {
+      setTimeout(() => queueCard(id, owner, multiplier - 1), 0);
+    }
+  };
 
   function partition<T>(arr: T[], predicate: (item: T) => boolean): [T[], T[]] {
     const truthy: T[] = [];
@@ -411,7 +419,10 @@ function App() {
         if (index < 0) return;
 
         const stolen = targetZone[index];
-
+        setGameLog((prev) => [
+          ...prev,
+          `${owner} stole ${target}'s ${stolen.name} using Covetous.`,
+        ]);
         setplayer2Deck((deck) => [...deck, stolen.id]);
         setplayZone1((prev) => prev.filter((_, i) => i !== index));
         setNegatedPlayers((neg) => new Set(neg).add('Player 2'));
@@ -438,8 +449,12 @@ function App() {
         setplayer1Deck((prev) => [...prev.slice(0, -1), top2!]);
         setplayer2Deck((prev) => [...prev.slice(0, -1), top1!]);
       }
+      setGameLog((prev) => [
+        ...prev,
+        `${owner}'s deceitful swapped the top cards of each player's deck`,
+      ]);
     },
-    //Impulsive Not Done
+    //Impulsive
     4: (card, owner, localNegated) => {
       if (localNegated.has(owner)) {
         clearNegation(owner);
@@ -480,6 +495,9 @@ function App() {
       if (localNegated.has(owner)) return;
       const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
       localNegated.add(target);
+      const playZone = owner === 'Player 1' ? playZone2 : playZone1;
+      const cardName = playZone[playZone.length - 1].name;
+      setGameLog((prev) => [...prev, `Irreverent negated ${cardName}.`]);
     },
     //Free
     7: (card, owner, localNegated) => {
@@ -488,6 +506,10 @@ function App() {
         return;
       }
       setNegatedPlayers((prev) => new Set(prev).add(owner));
+      setGameLog((prev) => [
+        ...prev,
+        `${owner}'s next card will have no effect.`,
+      ]);
     },
     //Hasty
     8: (card, owner, localNegated) => {
@@ -505,6 +527,10 @@ function App() {
         discard((prev) => [...prev, top2]);
         setplayer2Deck((prev) => prev.slice(0, -1));
       }
+      setGameLog((prev) => [
+        ...prev,
+        `Hasty discarded the top card of each player's deck.`,
+      ]);
     },
     //Nostalgic
     9: (card, owner, localNegated) => {
@@ -544,6 +570,10 @@ function App() {
         setTimeout(() => {
           handler(topCard, target, new Set());
         }, 0);
+        setGameLog((prev) => [
+          ...prev,
+          `${owner} plundered ${target}'s ${topCard.Name}`,
+        ]);
       }
     },
     //Powerful
@@ -555,6 +585,13 @@ function App() {
       const deck = owner === 'Player 1' ? player1Deck : player2Deck;
       const topTwo = [...deck].slice(-2);
       topTwo.reverse().forEach((id, i) => {
+        const card = cardLibrary.find((c) => c.id === id);
+        if (card) {
+          setGameLog((prev) => [
+            ...prev,
+            `${owner} played ${card.Name} using Powerful.`,
+          ]);
+        }
         setTimeout(() => queueCard(id, owner), i * 10);
       });
     },
@@ -566,8 +603,12 @@ function App() {
       }
       const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
       setSkippedPlayers((prev) => new Set(prev).add(target));
+      setGameLog((prev) => [
+        ...prev,
+        `${owner} skipped ${target}'s next turn.`,
+      ]);
     },
-    // Reckless
+    // Reckless - unlogged
     14: (card, owner, localNegated) => {
       if (localNegated.has(owner)) {
         clearNegation(owner);
@@ -576,7 +617,8 @@ function App() {
 
       setNegatedPlayers((prev) => new Set(prev).add(owner));
 
-      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
+      const target: 'Player 1' | 'Player 2' =
+        owner === 'Player 1' ? 'Player 2' : 'Player 1';
       const targetDeck = target === 'Player 1' ? player1Deck : player2Deck;
       const topCards = [...targetDeck].slice(-2); // grab up to 2 top cards
 
@@ -595,12 +637,25 @@ function App() {
 
       cardsToPlay.forEach((id) => {
         if (id === undefined) return;
+        const cardMeta = cardLibrary.find((c) => c.id === id);
+        if (!cardMeta) return;
+        setGameLog((prev) => [
+          ...prev,
+          `${owner} forced ${target} to play ${cardMeta.Name} using Reckless.`,
+        ]);
+
+        const playedCard = {
+          id: cardMeta.id,
+          owner: target,
+          name: cardMeta.Name,
+          priority: cardMeta.Priority ?? undefined,
+        };
 
         if (target === 'Player 1') {
-          setplayZone1((prev) => [...prev, { id, owner: 'Player 1' }]);
+          setplayZone1((prev) => [...prev, playedCard]);
           setplayer1Deck((prev) => prev.slice(0, -1));
         } else {
-          setplayZone2((prev) => [...prev, { id, owner: 'Player 2' }]);
+          setplayZone2((prev) => [...prev, playedCard]);
           setplayer2Deck((prev) => prev.slice(0, -1));
         }
       });
@@ -616,6 +671,10 @@ function App() {
         return;
       }
       setDoubledPlayers((prev) => new Set(prev).add(owner));
+      setGameLog((prev) => [
+        ...prev,
+        `${owner}'s next card will be played twice.`,
+      ]);
     },
     //Tempered
     17: (card, owner, localNegated) => {
@@ -624,6 +683,7 @@ function App() {
         return;
       }
       setSkippedPlayers((prev) => new Set(prev).add(owner));
+      setGameLog((prev) => [...prev, `${owner} skipped their next turn.`]);
     },
     //Tranquil
     18: (card, owner, localNegated) => {
@@ -636,14 +696,24 @@ function App() {
         const [toReturn, remaining] = partition(playZone1, (c) => c.id === 10);
         setplayer1Deck((prev) => [...prev, ...toReturn.map((c) => c.id)]);
         setplayZone1(remaining);
+        const playCount = toReturn.length;
         setNegatedPlayers((neg) => new Set(neg).add('Player 1'));
+        setGameLog((prev) => [
+          ...prev,
+          `${owner} put ${playCount} Patient cards on top of their deck.`,
+        ]);
       }
 
       if (owner === 'Player 2') {
         const [toReturn, remaining] = partition(playZone2, (c) => c.id === 10);
         setplayer2Deck((prev) => [...prev, ...toReturn.map((c) => c.id)]);
         setplayZone2(remaining);
+        const playCount = toReturn.length;
         setNegatedPlayers((neg) => new Set(neg).add('Player 2'));
+        setGameLog((prev) => [
+          ...prev,
+          `${owner} put ${playCount} Patient cards on top of their deck.`,
+        ]);
       }
     },
     //Wisened
@@ -656,12 +726,20 @@ function App() {
         if (playZone1.length > playZone2.length) {
           discard((prev) => [...prev, player2Deck[player2Deck.length - 1]]);
           setplayer2Deck((prev) => prev.slice(0, -1));
+          setGameLog((prev) => [
+            ...prev,
+            `Player 1 discarded the top card of Player 2's deck using Wisened.`,
+          ]);
         }
       }
       if (owner === 'Player 2') {
         if (playZone2.length > playZone1.length) {
           discard((prev) => [...prev, player1Deck[player1Deck.length - 1]]);
           setplayer1Deck((prev) => prev.slice(0, -1));
+          setGameLog((prev) => [
+            ...prev,
+            `Player 2 discarded the top card of Player 1's deck.`,
+          ]);
         }
       }
       return;
@@ -690,12 +768,20 @@ function App() {
         if (player1Deck.length < player2Deck.length) {
           discard((prev) => [...prev, player2Deck[player2Deck.length - 1]]);
           setplayer2Deck((prev) => prev.slice(0, -1));
+          setGameLog((prev) => [
+            ...prev,
+            `Player 1 discarded the top card of Player 2's deck.`,
+          ]);
         }
       }
       if (owner === 'Player 2') {
         if (player2Deck.length < player1Deck.length) {
           discard((prev) => [...prev, player1Deck[player1Deck.length - 1]]);
           setplayer1Deck((prev) => prev.slice(0, -1));
+          setGameLog((prev) => [
+            ...prev,
+            `Player 1 discarded the top card of Player 2's deck.`,
+          ]);
         }
       }
     },
@@ -705,6 +791,7 @@ function App() {
         clearNegation(owner);
         return;
       }
+      setGameLog((prev) => [...prev, `${owner} has lost the game.`]);
     },
   };
   const modalResolvers = useRef<(() => void)[]>([]);
@@ -749,14 +836,6 @@ function App() {
     }
   }, [turn]);
 
-  useEffect(() => {
-    if (playedThisTurn === true) {
-      setPlayedThisTurn(false);
-      return;
-    }
-    //card effect
-  }, [playZone1]);
-  useEffect(() => {}, [playZone2]);
 
   // shuffling algorithm. Start at the end of the deckArray(drafting pool), pick a random number between 0 and 23 and swap our current position with it. Keep going backwards until we hit the first element in the array and we know that every element has been moved at least once.
   const shuffle = () => {
@@ -790,7 +869,7 @@ function App() {
       setDeckArray(tempdeckArray);
     }
   };
-  // this actually allows the players to draft the cards being shown to them
+  // this allows the players to draft the cards being shown to them
   const cardClick = (card: Card) => {
     // only do this during the draft phase.
     if (phase === 'draft') {
