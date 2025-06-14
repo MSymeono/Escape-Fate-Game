@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './effectModal.css';
 
-type PlayedCard = { id: number; owner: 'Player 1' | 'Player 2' };
-
 type Card = {
   Name: string;
   Text: string;
   id: number;
-  Quantity: number;
-  Priority: number;
+  Owner?: 'Player 1' | 'Player 2';
+  Quantity?: number;
+  Priority: number | null;
+  Multiplier?: number;
 };
 
 type EffectHandler = (
@@ -17,34 +17,27 @@ type EffectHandler = (
   negatedPlayers: Set<'Player 1' | 'Player 2'>
 ) => void;
 
-type CardType = {
-  Name: string;
-  Text: string;
-  id: number;
-  Quantity: number;
-  Priority: number | null;
-};
-
 const ImpulsiveEffect = ({
   topTwoIds,
   cardLibrary,
   onConfirm,
 }: {
-  topTwoIds: number[];
-  cardLibrary: CardType[];
-  onConfirm: (selectedCardIds: number[]) => void;
+  topTwoIds: Card[];
+  cardLibrary: Card[];
+  onConfirm: (selectedCardIds: Card[]) => void;
 }) => {
-  const topTwoCards = topTwoIds
-    .map((id) => cardLibrary.find((c) => c.id === id))
-    .filter(Boolean) as CardType[];
+  const topTwoCards = topTwoIds.filter(Boolean) as Card[];
 
-  const [selectedImpulsive, setSelectedImpulsive] = useState<CardType | null>(
-    null
-  );
+  const [selectedImpulsive, setSelectedImpulsive] = useState<Card | null>(null);
 
   const handleConfirm = () => {
     if (!selectedImpulsive) return;
-    onConfirm([selectedImpulsive.id]);
+    console.log(
+      'Confirming Impulsive with',
+      selectedImpulsive,
+      selectedImpulsive.type
+    );
+    onConfirm([selectedImpulsive]);
   };
 
   return (
@@ -80,29 +73,25 @@ const ImpulsiveEffect = ({
 const NostalgicEffect = ({
   playedCards,
   effectHandlers,
-  playZone,
   cardLibrary,
   onConfirm,
   owner,
 }: {
-  playedCards: CardType[];
-  cardLibrary: CardType[];
-  playZone: PlayedCard[];
+  playedCards: Card[];
+  cardLibrary: Card[];
   effectHandlers: { [key: number]: EffectHandler };
   owner: 'Player 1' | 'Player 2';
-  onConfirm: () => void;
+  onConfirm: (selectedNostalgic: Card[]) => void;
 }) => {
-  const [selectedNostalgic, setSelectedNostalgic] = useState<CardType | null>(
-    null
-  );
+  const [selectedNostalgic, setSelectedNostalgic] = useState<Card | null>(null);
 
   const handleConfirm = () => {
     if (!selectedNostalgic) return;
-    onConfirm();
+    onConfirm([selectedNostalgic]);
     setTimeout(() => {
       const handler = effectHandlers[selectedNostalgic.id];
       if (handler) {
-        handler(selectedNostalgic as Card, owner, new Set());
+        handler(selectedNostalgic, owner, new Set());
       }
     }, 0);
   };
@@ -143,14 +132,14 @@ const IndecisiveEffect = ({
   onConfirm,
 }: {
   discardIds: number[];
-  cardLibrary: CardType[];
-  onConfirm: (selected: CardType) => void;
+  cardLibrary: Card[];
+  onConfirm: (selected: Card) => void;
 }) => {
   const discardCards = discardIds
     .map((id) => cardLibrary.find((c) => c.id === id))
-    .filter(Boolean) as CardType[];
+    .filter(Boolean) as Card[];
 
-  const [selectedIndecisive, setSelectedIndecisive] = useState<CardType | null>(
+  const [selectedIndecisive, setSelectedIndecisive] = useState<Card | null>(
     null
   );
 
@@ -188,22 +177,20 @@ const IndecisiveEffect = ({
 };
 
 const WeaveEffect = ({
-  topThreeIds,
+  topThree,
   cardLibrary,
   onConfirm,
 }: {
-  topThreeIds: number[];
-  cardLibrary: CardType[];
-  onConfirm: (newOrder: CardType[]) => void;
+  topThree: Card[];
+  cardLibrary: Card[];
+  onConfirm: (newOrder: Card[]) => void;
 }) => {
-  const [orderedCards, setOrderedCards] = useState<CardType[]>([]);
+  const [orderedCards, setOrderedCards] = useState<Card[]>([]);
 
   useEffect(() => {
-    const updatedCards = topThreeIds
-      .map((id) => cardLibrary.find((c) => c.id === id))
-      .filter(Boolean) as CardType[];
+    const updatedCards = topThree.filter(Boolean) as Card[];
     setOrderedCards(updatedCards);
-  }, [topThreeIds, cardLibrary]);
+  }, [topThree, cardLibrary]);
 
   const moveCard = (index: number, direction: 'up' | 'down') => {
     const newOrder = [...orderedCards];
@@ -251,10 +238,10 @@ const EffectModal = ({
   effectHandlers,
   onComplete,
 }: {
-  card: CardType;
+  card: Card;
   owner: 'Player 1' | 'Player 2';
   context: any;
-  cardLibrary: CardType[];
+  cardLibrary: Card[];
   effectHandlers: { [key: number]: EffectHandler };
   onComplete: (result?: any) => void;
 }) => {
@@ -268,7 +255,8 @@ const EffectModal = ({
     Array.isArray(context?.playedCards);
   const isImpulsive =
     card.Name?.toLowerCase() === 'impulsive' &&
-    Array.isArray(context?.topTwoIds);
+    Array.isArray(context?.topTwoIds) &&
+    context?.topTwoIds[0]?.id !== undefined;
 
   return (
     <div className='effect-modal'>
@@ -279,7 +267,7 @@ const EffectModal = ({
 
       {isWeave ? (
         <WeaveEffect
-          topThreeIds={context.topThreeIds}
+          topThree={context.topThreeIds}
           cardLibrary={cardLibrary}
           onConfirm={onComplete}
         />
@@ -293,10 +281,9 @@ const EffectModal = ({
         <NostalgicEffect
           playedCards={context.playedCards}
           cardLibrary={cardLibrary}
-          playZone={context.playZone}
           effectHandlers={effectHandlers}
           owner={owner}
-          onConfirm={() => onComplete()}
+          onConfirm={(selectedCard) => onComplete(selectedCard)}
         />
       ) : isImpulsive ? (
         <ImpulsiveEffect

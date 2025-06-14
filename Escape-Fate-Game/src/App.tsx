@@ -11,24 +11,27 @@ type Card = {
   Name: string;
   Text: string;
   id: number;
-  Quantity: number;
+  Owner?: 'Player 1' | 'Player 2';
+  Quantity?: number;
   Priority: number | null;
+  Multiplier?: number;
 };
 
-type PlayedCard = {
-  id: number;
-  owner: 'Player 1' | 'Player 2';
-  name: string;
-  multiplier?: number;
-};
+// type PlayedCard = {
+//   id: number;
+//   Owner: 'Player 1' | 'Player 2'|null;
+//   Name: string;
+//   Priority: number | null;
+//   Multiplier?: number;
+// };
 type EffectHandler = (
   card: Card,
-  owner: 'Player 1' | 'Player 2',
+  Owner: 'Player 1' | 'Player 2',
   negatedPlayers: Set<'Player 1' | 'Player 2'>
 ) => void;
 
 function App() {
-  // library of cards in the game. Shows Name, text, priority, quantity, and the ID for each card.
+  // library of cards in the game. Shows Name, Text, Priority, Quantity, and the ID for each card.
   const cardLibrary = [
     {
       Name: 'Chaotic',
@@ -112,7 +115,7 @@ function App() {
     },
     {
       Name: 'Plunderous',
-      Text: `Play the top card of your opponent's deck twice. Then put it back.`,
+      Text: `Play the top card of your opponent's deck.`,
       id: 11,
       Quantity: 1,
       Priority: 6,
@@ -152,7 +155,7 @@ function App() {
     },
     {
       Name: 'Strategic',
-      Text: `The next card you play after this is played twice.`,
+      Text: `The card you play next turn is played twice.`,
       id: 16,
       Quantity: 1,
       Priority: null,
@@ -220,11 +223,15 @@ function App() {
   // draftArray is each set of 3 cards that gets drafted during the draft portion.
   const [draftArray, setDraftArray] = useState<number[]>([]);
   // the two play zones represent each player's "in play" zones.
-  const [playZone1, setplayZone1] = useState<PlayedCard[]>([]);
-  const [playZone2, setplayZone2] = useState<PlayedCard[]>([]);
+  const [playZone1, setplayZone1] = useState<Card[]>([]);
+  const [playZone2, setplayZone2] = useState<Card[]>([]);
   // the two decks get filled during the draft portion and get emptied during the play portion. They start with the last card "cut", which, when drawn, makes the player lose the game
-  const [player1Deck, setplayer1Deck] = useState<number[]>([22]);
-  const [player2Deck, setplayer2Deck] = useState<number[]>([22]);
+  const [player1Deck, setplayer1Deck] = useState<Card[]>([
+    { id: 22, Owner: 'Player 1', Name: 'Cut', Priority: 16, Multiplier: 1 },
+  ]);
+  const [player2Deck, setplayer2Deck] = useState<Card[]>([
+    { id: 22, Owner: 'Player 2', Name: 'Cut', Priority: 16, Multiplier: 1 },
+  ]);
   // this controls which phase of the game we are in to help with rendering.
   const [phase, setPhase] = useState('draft');
   //rules and cardsList below are two overlays that respectively show the rules and the full list of cards.
@@ -235,8 +242,6 @@ function App() {
   const [resourcefulDrafted, setResourcefulDrafted] = useState<boolean>(false);
 
   const [turn, setTurn] = useState<number>(1);
-  const [turnEnd, setTurnEnd] = useState<number>(0);
-  const [playedThisTurn, setPlayedThisTurn] = useState<boolean>(false);
 
   const [negatedPlayers, setNegatedPlayers] = useState<
     Set<'Player 1' | 'Player 2'>
@@ -251,43 +256,10 @@ function App() {
   const [playInteraction, setPlayInteraction] = useState<
     {
       card: Card;
-      owner: 'Player 1' | 'Player 2';
+      Owner: 'Player 1' | 'Player 2';
       context: any;
     }[]
   >([]);
-
-  const queueCard = (
-    id: number,
-    owner: 'Player 1' | 'Player 2',
-    multiplier: number = doubledPlayers.has(owner) ? 2 : 1
-  ) => {
-    if (multiplier <= 0) return;
-    const card = cardLibrary.find((c) => c.id === id);
-    if (!card) return;
-    if (multiplier === 2 && doubledPlayers.has(owner)) {
-      setDoubledPlayers((prev) => {
-        const next = new Set(prev);
-        next.delete(owner);
-        return next;
-      });
-    }
-    const playedCard = {
-      id: card.id,
-      owner,
-      name: card.Name,
-      priority: card.Priority ?? undefined,
-    };
-    if (owner === 'Player 1') {
-      setplayZone1((prev) => [...prev, playedCard]);
-      setplayer1Deck((prev) => prev.slice(0, -1));
-    } else {
-      setplayZone2((prev) => [...prev, playedCard]);
-      setplayer2Deck((prev) => prev.slice(0, -1));
-    }
-    if (multiplier > 1) {
-      setTimeout(() => queueCard(id, owner, multiplier - 1), 0);
-    }
-  };
 
   function partition<T>(arr: T[], predicate: (item: T) => boolean): [T[], T[]] {
     const truthy: T[] = [];
@@ -304,23 +276,79 @@ function App() {
   // When we move from draft to play, this tops off each player's deck with "weave" and "measure", the only consistent cards in each player's deck
   useEffect(() => {
     if (phase === 'play') {
-      setplayer1Deck((prev) => [...prev, 21, 20]);
-      setplayer2Deck((prev) => [...prev, 21, 20]);
+      setplayer1Deck((prev) => [
+        ...prev,
+        {
+          id: 21,
+          Owner: 'Player 1',
+          Name: 'Measure',
+          Priority: 9,
+          Multiplier: 1,
+          Text: `Count the remaining cards in both decks. If your opponent has more, discard the top card of their deck. It has no effect.`,
+        },
+        {
+          id: 20,
+          Owner: 'Player 1',
+          Name: 'Weave',
+          Priority: 3,
+          Multiplier: 1,
+          Text: `Look at the top 3 cards of your deck and put them back in any order.`,
+        },
+      ]);
+      setplayer2Deck((prev) => [
+        ...prev,
+        {
+          id: 21,
+          Owner: 'Player 2',
+          Name: 'Measure',
+          Priority: 9,
+          Multiplier: 1,
+          Text: `Count the remaining cards in both decks. If your opponent has more, discard the top card of their deck. It has no effect.`,
+        },
+        {
+          id: 20,
+          Owner: 'Player 2',
+          Name: 'Weave',
+          Priority: 3,
+          Multiplier: 1,
+          Text: `Look at the top 3 cards of your deck and put them back in any order.`,
+        },
+      ]);
     }
   }, [phase]);
+
+  useEffect(() => {
+    console.log('we are in skipped players', skippedPlayers);
+  }, [skippedPlayers]);
+
+  useEffect(() => {
+    console.log('skippedPlayers', skippedPlayers);
+    console.log('p1top', player1Deck[player1Deck.length - 1]);
+    console.log('p2top', player2Deck[player2Deck.length - 1]);
+  }, [playZone1, playZone2]);
+
   // Card 15 is "resourceful". When drafted, it lets the player that drafted it also draft the 3rd card of that round, rather than it being discarded. This useEffect is doing 2 things. First, it, under "normal" conditions, discards the third card and resets the draftArray. Because this is where we do that, we also have an if check to see if card 15 got drafted. If so, instead of moving the 3rd card to the discard pile, we give it to that player.
   useEffect(() => {
     if (phase === 'draft' && draftArray.length === 1) {
       const toDiscard = draftArray[0];
-
+      const fullCard = cardLibrary.find((c) => c.id === toDiscard);
+      const toTop: Card = {
+        Name: fullCard!.Name,
+        id: toDiscard,
+        Text: fullCard!.Text,
+        Priority: fullCard!.Priority,
+        Multiplier: 1,
+      };
       // Determine who drafted card 15
       const p1Last = player1Deck[player1Deck.length - 1];
       const p2Last = player2Deck[player2Deck.length - 1];
 
-      if (p1Last === 15) {
-        setplayer1Deck((prev) => [...prev, toDiscard]);
-      } else if (p2Last === 15) {
-        setplayer2Deck((prev) => [...prev, toDiscard]);
+      if (p1Last.id === 15) {
+        toTop.Owner = 'Player 1';
+        setplayer1Deck((prev) => [...prev, toTop]);
+      } else if (p2Last.id === 15) {
+        toTop.Owner = 'Player 2';
+        setplayer2Deck((prev) => [...prev, toTop]);
       } else {
         discard((prev) => [...prev, toDiscard]);
       }
@@ -343,12 +371,12 @@ function App() {
     [key: number]: EffectHandler;
   } = {
     //chaotic
-    1: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    1: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
+      const target = Owner === 'Player 1' ? 'Player 2' : 'Player 1';
       localNegated.add(target);
       const p1Zone = [...playZone1];
       const p2Zone = [...playZone2];
@@ -357,13 +385,13 @@ function App() {
       if (target === 'Player 1') {
         const lastPlayed = p1Zone[p1Zone.length - 1];
         if (lastPlayed) {
-          setplayer1Deck((prev) => [...prev, lastPlayed.id]);
+          setplayer1Deck((prev) => [...prev, lastPlayed]);
         }
       }
       if (target === 'Player 2') {
         const lastPlayed = p2Zone[p2Zone.length - 1];
         if (lastPlayed) {
-          setplayer2Deck((prev) => [...prev, lastPlayed.id]);
+          setplayer2Deck((prev) => [...prev, lastPlayed]);
         }
       }
       {
@@ -371,20 +399,14 @@ function App() {
         const chaotic2 = p2Deck[3] ?? p2Deck[p2Deck.length - 1];
 
         if (chaotic1 !== undefined) {
-          setplayZone1((prev) => [
-            ...prev,
-            { id: chaotic1, owner: 'Player 1' },
-          ]);
+          setplayZone1((prev) => [...prev, chaotic1]);
           setplayer1Deck((prev) =>
             prev.filter((_, i) => i !== p1Deck.length - 1)
           );
         }
 
         if (chaotic2 !== undefined) {
-          setplayZone2((prev) => [
-            ...prev,
-            { id: chaotic2, owner: 'Player 2' },
-          ]);
+          setplayZone2((prev) => [...prev, chaotic2]);
           setplayer2Deck((prev) =>
             prev.filter((_, i) => i !== p2Deck.length - 1)
           );
@@ -392,13 +414,13 @@ function App() {
       }
     },
     // Covetous
-    2: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    2: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      const target = owner === 'Player 1' ? 'Player2' : 'Player 1';
-      if (owner === 'Player 1') {
+      const target = Owner === 'Player 1' ? 'Player2' : 'Player 1';
+      if (Owner === 'Player 1') {
         const targetZone = [...playZone2];
         const index = targetZone.length - 2;
         if (index < 0) return;
@@ -406,14 +428,14 @@ function App() {
         const stolen = targetZone[index];
         setGameLog((prev) => [
           ...prev,
-          `${owner} stole ${target}'s ${stolen.name} using Covetous.`,
+          `${Owner} stole ${target}'s ${stolen.Name} using Covetous.`,
         ]);
-        setplayer1Deck((deck) => [...deck, stolen.id]);
+        setplayer1Deck((deck) => [...deck, stolen]);
         setplayZone2((prev) => prev.filter((_, i) => i !== index));
         setNegatedPlayers((neg) => new Set(neg).add('Player 1'));
       }
 
-      if (owner === 'Player 2') {
+      if (Owner === 'Player 2') {
         const targetZone = [...playZone1];
         const index = targetZone.length - 2;
         if (index < 0) return;
@@ -421,17 +443,17 @@ function App() {
         const stolen = targetZone[index];
         setGameLog((prev) => [
           ...prev,
-          `${owner} stole ${target}'s ${stolen.name} using Covetous.`,
+          `${Owner} stole ${target}'s ${stolen.Name} using Covetous.`,
         ]);
-        setplayer2Deck((deck) => [...deck, stolen.id]);
+        setplayer2Deck((deck) => [...deck, stolen]);
         setplayZone1((prev) => prev.filter((_, i) => i !== index));
         setNegatedPlayers((neg) => new Set(neg).add('Player 2'));
       }
     },
     //Deceitful
-    3: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    3: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
       const top1 = player1Deck[player1Deck.length - 1];
@@ -451,28 +473,23 @@ function App() {
       }
       setGameLog((prev) => [
         ...prev,
-        `${owner}'s deceitful swapped the top cards of each player's deck`,
+        `${Owner}'s deceitful swapped the top cards of each player's deck`,
       ]);
     },
     //Impulsive
-    4: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    4: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
       const topTwoIds =
-        owner === 'Player 1' ? player1Deck.slice(-2) : player2Deck.slice(-2);
+        Owner === 'Player 1' ? player1Deck.slice(-2) : player2Deck.slice(-2);
 
-      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
-      if (owner === 'Player 1') {
-      }
-
-      setNegatedPlayers((prev) => new Set(prev).add(target));
       setPlayInteraction((prev) => [
         ...prev,
         {
           card,
-          owner,
+          Owner,
           context: {
             topTwoIds,
           },
@@ -480,51 +497,51 @@ function App() {
       ]);
     },
     //Indecisive
-    5: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    5: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
       setPlayInteraction((prev) => [
         ...prev,
-        { card, owner, context: { discardIds: discardPile } },
+        { card, Owner, context: { discardIds: discardPile } },
       ]);
     },
     //Irreverent
-    6: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) return;
-      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
+    6: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) return;
+      const target = Owner === 'Player 1' ? 'Player 2' : 'Player 1';
       localNegated.add(target);
-      const playZone = owner === 'Player 1' ? playZone2 : playZone1;
-      const cardName = playZone[playZone.length - 1].name;
+      const playZone = Owner === 'Player 1' ? playZone2 : playZone1;
+      const cardName = playZone[playZone.length - 1].Name;
       setGameLog((prev) => [...prev, `Irreverent negated ${cardName}.`]);
     },
     //Free
-    7: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    7: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      setNegatedPlayers((prev) => new Set(prev).add(owner));
+      setNegatedPlayers((prev) => new Set(prev).add(Owner));
       setGameLog((prev) => [
         ...prev,
-        `${owner}'s next card will have no effect.`,
+        `${Owner}'s next card will have no effect.`,
       ]);
     },
     //Hasty
-    8: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    8: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
       const top1 = player1Deck[player1Deck.length - 1];
       const top2 = player2Deck[player2Deck.length - 1];
       if (top1) {
-        discard((prev) => [...prev, top1]);
+        discard((prev) => [...prev, top1.id]);
         setplayer1Deck((prev) => prev.slice(0, -1));
       }
       if (top2) {
-        discard((prev) => [...prev, top2]);
+        discard((prev) => [...prev, top2.id]);
         setplayer2Deck((prev) => prev.slice(0, -1));
       }
       setGameLog((prev) => [
@@ -533,198 +550,176 @@ function App() {
       ]);
     },
     //Nostalgic
-    9: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    9: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      const playZone = owner === 'Player 1' ? playZone1 : playZone2;
-      const playedCards = playZone
-        .map(({ id }) => cardLibrary.find((c) => c.id === id))
-        .filter((c): c is Card => !!c)
-        .slice(0, -1);
+      const playZone = Owner === 'Player 1' ? playZone1 : playZone2;
+      const playedCards = playZone.filter((c) => c.id !== card.id);
       setPlayInteraction((prev) => [
         ...prev,
-        { card, owner, context: { playedCards, playZone } },
+        { card, Owner, context: { playedCards } },
       ]);
     },
     //Patient
-    10: (card, owner, localNegated) => {
+    10: (card, Owner, localNegated) => {
       return;
     },
     //Plunderous
-    11: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    11: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
 
-      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
+      const target = Owner === 'Player 1' ? 'Player 2' : 'Player 1';
       const targetDeck = target === 'Player 1' ? player1Deck : player2Deck;
+      const targetZone = target === 'Player 1' ? playZone1 : playZone2;
       const top = targetDeck[targetDeck.length - 1];
-      const topCard = cardLibrary.find((c) => c.id === top);
 
-      if (topCard) {
-        const handler = effectHandlers[topCard.id];
-        handler(topCard, target, new Set());
-        setTimeout(() => {
-          handler(topCard, target, new Set());
-        }, 0);
+      if (top) {
+        const handler = effectHandlers[top.id];
+        console.log(top, 'top1');
+        handler(top, target, new Set());
         setGameLog((prev) => [
           ...prev,
-          `${owner} plundered ${target}'s ${topCard.Name}`,
+          `${Owner} plundered ${target}'s ${top.Name}`,
         ]);
+        console.log(top, 'top2');
+        if (targetZone === playZone1) {
+          setplayZone1((prev) => [...prev, top]);
+        } else if (targetZone === playZone2) {
+          setplayZone2((prev) => [...prev, top]);
+        }
+        console.log(top, 'top3');
       }
     },
     //Powerful
-    12: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    12: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      const deck = owner === 'Player 1' ? player1Deck : player2Deck;
+      const deck = Owner === 'Player 1' ? player1Deck : player2Deck;
       const topTwo = [...deck].slice(-2);
-      topTwo.reverse().forEach((id, i) => {
-        const card = cardLibrary.find((c) => c.id === id);
-        if (card) {
-          setGameLog((prev) => [
-            ...prev,
-            `${owner} played ${card.Name} using Powerful.`,
-          ]);
-        }
-        setTimeout(() => queueCard(id, owner), i * 10);
+      topTwo.reverse().forEach((card) => {
+        setGameLog((prev) => [
+          ...prev,
+          `${Owner} played ${card.Name} using Powerful.`,
+        ]);
+        const handler = effectHandlers[card.id];
+        handler(card, Owner, negatedPlayers);
       });
     },
     // Rapid
-    13: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    13: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      const target = owner === 'Player 1' ? 'Player 2' : 'Player 1';
+      const target = Owner === 'Player 1' ? 'Player 2' : 'Player 1';
       setSkippedPlayers((prev) => new Set(prev).add(target));
       setGameLog((prev) => [
         ...prev,
-        `${owner} skipped ${target}'s next turn.`,
+        `${Owner} skipped ${target}'s next turn.`,
       ]);
     },
-    // Reckless - unlogged
-    14: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    // Reckless
+    14: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
 
-      setNegatedPlayers((prev) => new Set(prev).add(owner));
+      setNegatedPlayers((prev) => new Set(prev).add(Owner));
 
       const target: 'Player 1' | 'Player 2' =
-        owner === 'Player 1' ? 'Player 2' : 'Player 1';
+        Owner === 'Player 1' ? 'Player 2' : 'Player 1';
       const targetDeck = target === 'Player 1' ? player1Deck : player2Deck;
-      const topCards = [...targetDeck].slice(-2); // grab up to 2 top cards
+      const topCard = targetDeck[targetDeck.length - 1];
+      const handler = effectHandlers[topCard.id];
+      handler(topCard, target, negatedPlayers);
 
-      // Determine how many to play based on whether this owner is doubled
-      const count = doubledPlayers.has(owner) ? 2 : 1;
-      const cardsToPlay = topCards.slice(-count);
+      if (!card) return;
+      setGameLog((prev) => [
+        ...prev,
+        `${Owner} forced ${target} to play ${topCard.Name} using Reckless.`,
+      ]);
 
-      // Clear the doubling effect after using it
-      if (doubledPlayers.has(owner)) {
-        setDoubledPlayers((prev) => {
-          const next = new Set(prev);
-          next.delete(owner);
-          return next;
-        });
+      if (target === 'Player 1') {
+        setplayZone1((prev) => [...prev, topCard]);
+        setplayer1Deck((prev) => prev.slice(0, -1));
+      } else {
+        setplayZone2((prev) => [...prev, topCard]);
+        setplayer2Deck((prev) => prev.slice(0, -1));
       }
-
-      cardsToPlay.forEach((id) => {
-        if (id === undefined) return;
-        const cardMeta = cardLibrary.find((c) => c.id === id);
-        if (!cardMeta) return;
-        setGameLog((prev) => [
-          ...prev,
-          `${owner} forced ${target} to play ${cardMeta.Name} using Reckless.`,
-        ]);
-
-        const playedCard = {
-          id: cardMeta.id,
-          owner: target,
-          name: cardMeta.Name,
-          priority: cardMeta.Priority ?? undefined,
-        };
-
-        if (target === 'Player 1') {
-          setplayZone1((prev) => [...prev, playedCard]);
-          setplayer1Deck((prev) => prev.slice(0, -1));
-        } else {
-          setplayZone2((prev) => [...prev, playedCard]);
-          setplayer2Deck((prev) => prev.slice(0, -1));
-        }
-      });
     },
     //Resourceful
-    15: (card, owner, localNegated) => {
+    15: (card, Owner, localNegated) => {
       return;
     },
     //Strategic
-    16: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    16: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      setDoubledPlayers((prev) => new Set(prev).add(owner));
+      setDoubledPlayers((prev) => new Set(prev).add(Owner));
       setGameLog((prev) => [
         ...prev,
-        `${owner}'s next card will be played twice.`,
+        `${Owner}'s next card will be played twice.`,
       ]);
     },
     //Tempered
-    17: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    17: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      setSkippedPlayers((prev) => new Set(prev).add(owner));
-      setGameLog((prev) => [...prev, `${owner} skipped their next turn.`]);
+      setSkippedPlayers((prev) => new Set(prev).add(Owner));
+      setGameLog((prev) => [...prev, `${Owner} skipped their next turn.`]);
     },
     //Tranquil
-    18: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    18: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
 
-      if (owner === 'Player 1') {
+      if (Owner === 'Player 1') {
         const [toReturn, remaining] = partition(playZone1, (c) => c.id === 10);
-        setplayer1Deck((prev) => [...prev, ...toReturn.map((c) => c.id)]);
+        setplayer1Deck((prev) => [...prev, ...toReturn]);
         setplayZone1(remaining);
         const playCount = toReturn.length;
         setNegatedPlayers((neg) => new Set(neg).add('Player 1'));
         setGameLog((prev) => [
           ...prev,
-          `${owner} put ${playCount} Patient cards on top of their deck.`,
+          `${Owner} put ${playCount} Patient cards on top of their deck.`,
         ]);
       }
 
-      if (owner === 'Player 2') {
+      if (Owner === 'Player 2') {
         const [toReturn, remaining] = partition(playZone2, (c) => c.id === 10);
-        setplayer2Deck((prev) => [...prev, ...toReturn.map((c) => c.id)]);
+        setplayer2Deck((prev) => [...prev, ...toReturn]);
         setplayZone2(remaining);
         const playCount = toReturn.length;
         setNegatedPlayers((neg) => new Set(neg).add('Player 2'));
         setGameLog((prev) => [
           ...prev,
-          `${owner} put ${playCount} Patient cards on top of their deck.`,
+          `${Owner} put ${playCount} Patient cards on top of their deck.`,
         ]);
       }
     },
     //Wisened
-    19: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    19: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      if (owner === 'Player 1') {
+      if (Owner === 'Player 1') {
         if (playZone1.length > playZone2.length) {
-          discard((prev) => [...prev, player2Deck[player2Deck.length - 1]]);
+          discard((prev) => [...prev, player2Deck[player2Deck.length - 1].id]);
           setplayer2Deck((prev) => prev.slice(0, -1));
           setGameLog((prev) => [
             ...prev,
@@ -732,9 +727,9 @@ function App() {
           ]);
         }
       }
-      if (owner === 'Player 2') {
+      if (Owner === 'Player 2') {
         if (playZone2.length > playZone1.length) {
-          discard((prev) => [...prev, player1Deck[player1Deck.length - 1]]);
+          discard((prev) => [...prev, player1Deck[player1Deck.length - 1].id]);
           setplayer1Deck((prev) => prev.slice(0, -1));
           setGameLog((prev) => [
             ...prev,
@@ -745,28 +740,28 @@ function App() {
       return;
     },
     //Weave
-    20: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    20: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
       const topThreeIds =
-        owner === 'Player 1' ? player1Deck.slice(-3) : player2Deck.slice(-3);
+        Owner === 'Player 1' ? player1Deck.slice(-3) : player2Deck.slice(-3);
 
       setPlayInteraction((prev) => [
         ...prev,
-        { card, owner, context: { topThreeIds } },
+        { card, Owner, context: { topThreeIds } },
       ]);
     },
     //Measure
-    21: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    21: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      if (owner === 'Player 1') {
+      if (Owner === 'Player 1') {
         if (player1Deck.length < player2Deck.length) {
-          discard((prev) => [...prev, player2Deck[player2Deck.length - 1]]);
+          discard((prev) => [...prev, player2Deck[player2Deck.length - 1].id]);
           setplayer2Deck((prev) => prev.slice(0, -1));
           setGameLog((prev) => [
             ...prev,
@@ -774,27 +769,28 @@ function App() {
           ]);
         }
       }
-      if (owner === 'Player 2') {
+      if (Owner === 'Player 2') {
         if (player2Deck.length < player1Deck.length) {
-          discard((prev) => [...prev, player1Deck[player1Deck.length - 1]]);
+          discard((prev) => [...prev, player1Deck[player1Deck.length - 1].id]);
           setplayer1Deck((prev) => prev.slice(0, -1));
           setGameLog((prev) => [
             ...prev,
-            `Player 1 discarded the top card of Player 2's deck.`,
+            `Player 2 discarded the top card of Player 1's deck.`,
           ]);
         }
       }
     },
     //Cut Not Done
-    22: (card, owner, localNegated) => {
-      if (localNegated.has(owner)) {
-        clearNegation(owner);
+    22: (card, Owner, localNegated) => {
+      if (localNegated.has(Owner)) {
+        clearNegation(Owner);
         return;
       }
-      setGameLog((prev) => [...prev, `${owner} has lost the game.`]);
+      setGameLog((prev) => [...prev, `${Owner} has lost the game.`]);
     },
   };
   const modalResolvers = useRef<(() => void)[]>([]);
+
   useEffect(() => {
     if (phase !== 'play') return;
 
@@ -803,39 +799,44 @@ function App() {
     const allPlayed = [latestP1, latestP2].filter(Boolean);
 
     const sorted = allPlayed
-      .map(({ id, owner }) => {
+      .map(({ id, Owner }) => {
         const card = cardLibrary.find((c) => c.id === id);
-        return card ? { card, owner } : null;
+        return card ? { card, Owner } : null;
       })
       .filter(Boolean)
-      .sort((a, b) => (a.card.Priority ?? 99) - (b.card.Priority ?? 99));
+      .sort((a, b) => (a!.card.Priority ?? 99) - (b!.card.Priority ?? 99));
 
     const localNegated = new Set(negatedPlayers);
     const modalPromises: Promise<void>[] = [];
 
-    sorted.forEach(({ card, owner }) => {
+    sorted.forEach(({ card, Owner }) => {
       const handler = effectHandlers[card.id];
       if (!handler) return;
 
-      if (card.Modal) {
-        modalPromises.push(
-          new Promise((resolve) => {
-            modalResolvers.current.push(resolve);
-            handler(card, owner, localNegated);
-          })
-        );
-      } else {
-        handler(card, owner, localNegated);
+      const timesToRun = doubledPlayers.has(Owner) ? 2 : 1;
+
+      if (doubledPlayers.has(Owner)) {
+        setDoubledPlayers((prev) => {
+          const next = new Set(prev);
+          next.delete(Owner);
+          return next;
+        });
+      }
+
+      for (let i = 0; i < timesToRun; i++) {
+        if (card.Modal) {
+          modalPromises.push(
+            new Promise((resolve) => {
+              modalResolvers.current.push(resolve);
+              handler(card, Owner, localNegated);
+            })
+          );
+        } else {
+          handler(card, Owner, localNegated);
+        }
       }
     });
-
-    if (modalPromises.length > 0) {
-      Promise.all(modalPromises).then(() => setTurnEnd(turn));
-    } else {
-      setTurnEnd(turn);
-    }
   }, [turn]);
-
 
   // shuffling algorithm. Start at the end of the deckArray(drafting pool), pick a random number between 0 and 23 and swap our current position with it. Keep going backwards until we hit the first element in the array and we know that every element has been moved at least once.
   const shuffle = () => {
@@ -873,17 +874,35 @@ function App() {
   const cardClick = (card: Card) => {
     // only do this during the draft phase.
     if (phase === 'draft') {
+      const fullCard = cardLibrary.find((c) => c.id === card.id);
+      if (!fullCard) return;
       // if the player is 1, clicking on the card will push it to their deck.
       if (activePlayer === 'Player 1') {
         const p1Deck = [...player1Deck];
-        p1Deck.push(card.id);
+        const toDeckTop: Card = {
+          Name: card.Name,
+          id: card.id,
+          Owner: 'Player 1',
+          Priority: card.Priority,
+          Multiplier: 1,
+          Text: fullCard.Text,
+        };
+        p1Deck.push(toDeckTop);
         setplayer1Deck(p1Deck);
 
         console.log(p1Deck, activePlayer, 'p1');
         // if the player is 2, clicking on the card will push it to their deck.
       } else if (activePlayer === 'Player 2') {
         const p2Deck = [...player2Deck];
-        p2Deck.push(card.id);
+        const toDeckTop: Card = {
+          Name: card.Name,
+          id: card.id,
+          Owner: 'Player 2',
+          Priority: card.Priority,
+          Multiplier: 1,
+          Text: fullCard.Text,
+        };
+        p2Deck.push(toDeckTop);
         setplayer2Deck(p2Deck);
 
         console.log(p2Deck, activePlayer, 'p2');
@@ -908,7 +927,9 @@ function App() {
   };
   // go to the next one
   const nextCards = () => {
+    console.log(skippedPlayers instanceof Set);
     if (skippedPlayers.has('Player 1')) {
+      console.log('removing negation from p1');
       setSkippedPlayers((prev) => {
         const next = new Set(prev);
         next.delete('Player 1');
@@ -916,96 +937,64 @@ function App() {
       });
     } else {
       const p1Top = player1Deck[player1Deck.length - 1];
-      const card = cardLibrary.find((c) => c.id === p1Top);
-      if (p1Top !== undefined) {
-        setplayZone1((prev) => [
-          ...prev,
-          {
-            id: p1Top,
-            owner: 'Player 1',
-            name: card!.Name,
-            priority: card?.Priority,
-          },
-        ]);
+      if (p1Top) {
+        setplayZone1((prev) => [...prev, p1Top]);
         setplayer1Deck((prev) => prev.slice(0, -1));
       }
-    }
+    
 
     if (skippedPlayers.has('Player 2')) {
       setSkippedPlayers((prev) => {
+        console.log('removing negation from p2');
         const next = new Set(prev);
         next.delete('Player 2');
+        console.log(next);
         return next;
       });
     } else {
       const p2Top = player2Deck[player2Deck.length - 1];
-      const card = cardLibrary.find((c) => c.id === p2Top);
-      if (p2Top !== undefined) {
-        setplayZone2((prev) => [
-          ...prev,
-          {
-            id: p2Top,
-            owner: 'Player 2',
-            name: card!.Name,
-            priority: card?.Priority,
-          },
-        ]);
+      if (p2Top) {
+        setplayZone2((prev) => [...prev, p2Top]);
         setplayer2Deck((prev) => prev.slice(0, -1));
       }
     }
+
     setTurn((t) => t + 1);
   };
 
-  const clearNegation = (owner: 'Player 1' | 'Player 2') => {
+  const clearNegation = (Owner: 'Player 1' | 'Player 2') => {
     setNegatedPlayers((prev) => {
       const updated = new Set(prev);
-      updated.delete(owner);
+      updated.delete(Owner);
       return updated;
     });
   };
   const handleInteractionComplete = (result: any) => {
-    const { card, owner, context } = playInteraction[0];
+    const { card, Owner, context } = playInteraction[0];
 
     if (card.Name === 'Impulsive') {
-      const selectedId = result?.[0];
-      const unselectedId = context.topTwoIds.find(
-        (id: number) => id !== selectedId
+      const selectedCard = result?.[0];
+      const unselected = context.topTwoIds.find(
+        (c: Card) => c.id !== selectedCard.id
       );
-      const selectedCard = cardLibrary.find((c) => c.id === selectedId);
-
       if (selectedCard) {
-        if (owner === 'Player 1') {
+        if (Owner === 'Player 1') {
           setplayer1Deck((prev) => [
             ...prev.slice(0, -2),
-            ...(unselectedId !== undefined ? [unselectedId] : []),
+            ...(unselected ? [unselected] : []),
           ]);
-          setplayZone1((prev) => [
-            ...prev,
-            {
-              id: selectedCard.id,
-              owner,
-              name: selectedCard.Name,
-              priority: selectedCard.Priority ?? undefined,
-            },
-          ]);
+          setplayZone1((prev) => [...prev, selectedCard]);
         } else {
           setplayer2Deck((prev) => [
             ...prev.slice(0, -2),
-            ...(unselectedId !== undefined ? [unselectedId] : []),
+            ...(unselected ? [unselected] : []),
           ]);
-          setplayZone2((prev) => [
-            ...prev,
-            {
-              id: selectedCard.id,
-              owner,
-              name: selectedCard.Name,
-              priority: selectedCard.Priority ?? undefined,
-            },
-          ]);
+          setplayZone2((prev) => [...prev, selectedCard]);
         }
+
         setGameLog((prev) => [
           ...prev,
-          `${owner} played ${selectedCard.Name} using Impulsive.`,
+          `${Owner} played ${selectedCard.Name} using Impulsive.`,
         ]);
       }
     } else if (
@@ -1013,69 +1002,53 @@ function App() {
       Array.isArray(result) &&
       result.every((r: any) => typeof r.id === 'number')
     ) {
-      const reorderedIds = result.map((c: Card) => c.id);
-      const sliceSize = reorderedIds.length;
+      const reorderedCards = result as Card[];
+      const sliceSize = reorderedCards.length;
 
-      if (owner === 'Player 1') {
+      if (Owner === 'Player 1') {
         setplayer1Deck((prev) => {
           const rest = prev.slice(0, prev.length - sliceSize);
-          return [...rest, ...reorderedIds];
+          return [...rest, ...reorderedCards];
         });
       } else {
         setplayer2Deck((prev) => {
           const rest = prev.slice(0, prev.length - sliceSize);
-          return [...rest, ...reorderedIds];
+          return [...rest, ...reorderedCards];
         });
       }
+
       setGameLog((prev) => [
         ...prev,
-        `${owner} wove the top ${sliceSize} cards of their deck.`,
+        `${Owner} wove the top ${sliceSize} cards of their deck.`,
       ]);
     } else if (
       card.Name === 'Indecisive' &&
       Array.isArray(result) &&
-      result.length === 1 &&
-      typeof result[0].id === 'number'
+      result.length === 1
     ) {
-      const selectedId = result[0].id;
-      const selectedCard = cardLibrary.find((c) => c.id === selectedId);
-      if (selectedCard) {
-        if (owner === 'Player 1') {
-          setplayer1Deck((prev) => [...prev, selectedId]);
-        } else {
-          setplayer2Deck((prev) => [...prev, selectedId]);
-        }
-        setGameLog((prev) => [
-          ...prev,
-          `Indecisive added ${selectedCard.Name} to ${owner}'s deck.`,
-        ]);
+      const selectedCard = result[0] as Card;
+
+      if (Owner === 'Player 1') {
+        setplayer1Deck((prev) => [...prev, selectedCard]);
+      } else {
+        setplayer2Deck((prev) => [...prev, selectedCard]);
       }
+
+      setGameLog((prev) => [
+        ...prev,
+        `Indecisive added ${selectedCard.Name} to ${Owner}'s deck.`,
+      ]);
     } else if (
       card.Name === 'Nostalgic' &&
       Array.isArray(result) &&
-      result.length === 1 &&
-      typeof result[0].id === 'number'
+      result.length === 1
     ) {
-      const selectedId = result[0].id;
-      const selectedCard = cardLibrary.find((c) => c.id === selectedId);
-      if (selectedCard) {
-        const playedCard = {
-          id: selectedCard.id,
-          owner,
-          name: selectedCard.Name,
-          priority: selectedCard.Priority ?? undefined,
-        };
+      const selectedCard = result[0] as Card;
 
-        if (owner === 'Player 1') {
-          setplayZone1((prev) => [...prev, playedCard]);
-        } else {
-          setplayZone2((prev) => [...prev, playedCard]);
-        }
-        setGameLog((prev) => [
-          ...prev,
-          `${owner} replayed ${selectedCard.Name} using Nostalgic .`,
-        ]);
-      }
+      setGameLog((prev) => [
+        ...prev,
+        `${Owner} replayed ${selectedCard.Name} using Nostalgic.`,
+      ]);
     }
 
     setPlayInteraction((prev) => prev.slice(1));

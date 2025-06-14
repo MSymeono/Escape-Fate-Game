@@ -9,24 +9,24 @@ type EffectHandler = (
   negatedPlayers: Set<'Player 1' | 'Player 2'>
 ) => void;
 
-type CardType = {
+type Card = {
   Name: string;
   Text: string;
   id: number;
-  Quantity: number;
+  Owner?: 'Player 1' | 'Player 2';
+  Quantity?: number;
   Priority: number | null;
+  Multiplier?: number;
 };
-
-type PlayedCard = { id: number; owner: 'Player 1' | 'Player 2' };
 
 type PlayBoardProps = {
   player1Deck: number[];
   setplayer1Deck: React.Dispatch<React.SetStateAction<number[]>>;
   player2Deck: number[];
   setplayer2Deck: React.Dispatch<React.SetStateAction<number[]>>;
-  playZone1: PlayedCard[];
-  playZone2: PlayedCard[];
-  cardLibrary: CardType[];
+  playZone1: Card[];
+  playZone2: Card[];
+  cardLibrary: Card[];
   effectHandlers: {
     [key: number]: EffectHandler;
   };
@@ -34,14 +34,14 @@ type PlayBoardProps = {
   discardPile: number[];
   phase: string;
   playInteraction: {
-    card: CardType;
+    card: Card;
     owner: 'Player 1' | 'Player 2';
     context: any;
   }[];
   setPlayInteraction: React.Dispatch<
     React.SetStateAction<
       {
-        card: CardType;
+        card: Card;
         owner: 'Player 1' | 'Player 2';
         context: any;
       }[]
@@ -70,7 +70,7 @@ const PlayBoard = ({
 
   const getCard = (id: number) => cardLibrary.find((card) => card.id === id);
 
-  const renderCardStack = (stack: PlayedCard[]) => (
+  const renderCardStack = (stack: Card[]) => (
     <div className='card-stack'>
       {stack.length > 0 &&
         (() => {
@@ -115,7 +115,7 @@ const PlayBoard = ({
                     key={`${cardObj.id}-${i}`}
                     card={card}
                     phase='play'
-                    owner={cardObj.owner}
+                    owner={cardObj.Owner}
                   />
                 ) : null;
               })}
@@ -130,7 +130,7 @@ const PlayBoard = ({
                     key={`${cardObj.id}-${i}`}
                     card={card}
                     phase='play'
-                    owner={cardObj.owner}
+                    owner={cardObj.Owner}
                   />
                 ) : null;
               })}
@@ -141,20 +141,18 @@ const PlayBoard = ({
         </div>
       )}
 
-      {playInteraction.length > 0 &&
-        (console.log('Active interaction:', playInteraction[0]),
-        (
-          <EffectModal
-            card={playInteraction[0].card}
-            owner={playInteraction[0].owner}
-            context={playInteraction[0].context}
-            effectHandlers={effectHandlers}
-            cardLibrary={cardLibrary}
-            setplayer1Deck={setplayer1Deck}
-            setplayer2Deck={setplayer2Deck}
-            onComplete={onComplete}
-          />
-        ))}
+      {playInteraction.length > 0 && (
+        <EffectModal
+          card={playInteraction[0].card}
+          owner={playInteraction[0].owner}
+          context={playInteraction[0].context}
+          effectHandlers={effectHandlers}
+          cardLibrary={cardLibrary}
+          setplayer1Deck={setplayer1Deck}
+          setplayer2Deck={setplayer2Deck}
+          onComplete={onComplete}
+        />
+      )}
     </div>
   );
 };
