@@ -394,7 +394,7 @@ function App() {
     //chaotic
     1: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -421,7 +421,7 @@ function App() {
     // Covetous
     2: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -460,7 +460,7 @@ function App() {
     //Deceitful
     3: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -488,7 +488,7 @@ function App() {
     //Impulsive
     4: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -510,7 +510,7 @@ function App() {
     //Indecisive
     5: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -532,7 +532,7 @@ function App() {
     //Free
     7: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -546,7 +546,7 @@ function App() {
     //Hasty
     8: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -569,7 +569,7 @@ function App() {
     //Nostalgic
     9: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -651,7 +651,7 @@ function App() {
 
     13: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -666,7 +666,7 @@ function App() {
     // Reckless
     14: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -699,7 +699,7 @@ function App() {
     //Strategic
     16: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -755,7 +755,7 @@ function App() {
     //Wisened
     19: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -799,7 +799,7 @@ function App() {
     //Measure
     21: (card, Owner, localNegated) => {
       // testing Return so we can isolate issues
-      return;
+      // return;
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
