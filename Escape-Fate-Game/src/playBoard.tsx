@@ -27,6 +27,7 @@ type PlayBoardProps = {
   playZone1: Card[];
   playZone2: Card[];
   cardLibrary: Card[];
+  negatedPlayers: Set<'Player 1' | 'Player 2'>;
   effectHandlers: {
     [key: number]: EffectHandler;
   };
@@ -64,6 +65,7 @@ const PlayBoard = ({
   effectHandlers,
   playInteraction,
   onComplete,
+  negatedPlayers,
   setPlayInteraction,
 }: PlayBoardProps) => {
   const [showStack, setShowStack] = useState(false);
@@ -146,6 +148,7 @@ const PlayBoard = ({
           card={playInteraction[0].card}
           owner={playInteraction[0].owner}
           context={playInteraction[0].context}
+          negatedPlayers = {negatedPlayers}
           effectHandlers={effectHandlers}
           cardLibrary={cardLibrary}
           setplayer1Deck={setplayer1Deck}

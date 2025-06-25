@@ -14,7 +14,8 @@ type Card = {
 type EffectHandler = (
   card: Card,
   owner: 'Player 1' | 'Player 2',
-  negatedPlayers: Set<'Player 1' | 'Player 2'>
+  negatedPlayers: Set<'Player 1' | 'Player 2'>,
+  otherCard?: Card
 ) => void;
 
 const ImpulsiveEffect = ({
@@ -32,11 +33,11 @@ const ImpulsiveEffect = ({
 
   const handleConfirm = () => {
     if (!selectedImpulsive) return;
-    console.log(
-      'Confirming Impulsive with',
-      selectedImpulsive,
-      selectedImpulsive.type
-    );
+    // console.log(
+    //   'Confirming Impulsive with',
+    //   selectedImpulsive,
+    //   selectedImpulsive.type
+    // );
     onConfirm([selectedImpulsive]);
   };
 
@@ -75,25 +76,25 @@ const NostalgicEffect = ({
   effectHandlers,
   cardLibrary,
   onConfirm,
-  owner,
+  otherCard,
+  negatedPlayers,
 }: {
   playedCards: Card[];
   cardLibrary: Card[];
   effectHandlers: { [key: number]: EffectHandler };
-  owner: 'Player 1' | 'Player 2';
+  negatedPlayers: Set<'Player 1' | 'Player 2'>;
   onConfirm: (selectedNostalgic: Card[]) => void;
+  otherCard: Card;
 }) => {
   const [selectedNostalgic, setSelectedNostalgic] = useState<Card | null>(null);
 
   const handleConfirm = () => {
     if (!selectedNostalgic) return;
-    onConfirm([selectedNostalgic]);
-    setTimeout(() => {
-      const handler = effectHandlers[selectedNostalgic.id];
-      if (handler) {
-        handler(selectedNostalgic, owner, new Set());
-      }
-    }, 0);
+    if (otherCard) {
+      onConfirm([selectedNostalgic, otherCard]);
+    } else {
+      onConfirm([selectedNostalgic]);
+    }
   };
 
   return (
