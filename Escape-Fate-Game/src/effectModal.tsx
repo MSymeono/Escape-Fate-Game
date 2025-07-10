@@ -18,58 +18,58 @@ type EffectHandler = (
   otherCard?: Card
 ) => void;
 
-const ImpulsiveEffect = ({
-  topTwoIds,
-  cardLibrary,
-  onConfirm,
-}: {
-  topTwoIds: Card[];
-  cardLibrary: Card[];
-  onConfirm: (selectedCardIds: Card[]) => void;
-}) => {
-  const topTwoCards = topTwoIds.filter(Boolean) as Card[];
+// const ImpulsiveEffect = ({
+//   topTwoIds,
+//   cardLibrary,
+//   onConfirm,
+// }: {
+//   topTwoIds: Card[];
+//   cardLibrary: Card[];
+//   onConfirm: (selectedCardIds: Card[]) => void;
+// }) => {
+//   const topTwoCards = topTwoIds.filter(Boolean) as Card[];
 
-  const [selectedImpulsive, setSelectedImpulsive] = useState<Card | null>(null);
+//   const [selectedImpulsive, setSelectedImpulsive] = useState<Card | null>(null);
 
-  const handleConfirm = () => {
-    if (!selectedImpulsive) return;
-    // console.log(
-    //   'Confirming Impulsive with',
-    //   selectedImpulsive,
-    //   selectedImpulsive.type
-    // );
-    onConfirm([selectedImpulsive]);
-  };
+//   const handleConfirm = () => {
+//     if (!selectedImpulsive) return;
+//     // console.log(
+//     //   'Confirming Impulsive with',
+//     //   selectedImpulsive,
+//     //   selectedImpulsive.type
+//     // );
+//     onConfirm([selectedImpulsive]);
+//   };
 
-  return (
-    <div className='impulsive-effect'>
-      <h4>Select a Card from the Top Two</h4>
-      <div>
-        Selected card:{' '}
-        {selectedImpulsive ? (
-          <strong>{selectedImpulsive.Name}</strong>
-        ) : (
-          <em>None</em>
-        )}
-      </div>
-      <ul>
-        {topTwoCards.map((card, index) => (
-          <li
-            key={`${card.id}-${index}`}
-            onClick={() => setSelectedImpulsive(card)}
-            className={selectedImpulsive?.id === card.id ? 'selected' : ''}
-            style={{ cursor: 'pointer' }}
-          >
-            <strong>{card.Name}</strong>: {card.Text}
-          </li>
-        ))}
-      </ul>
-      <button onClick={handleConfirm} disabled={!selectedImpulsive}>
-        Confirm
-      </button>
-    </div>
-  );
-};
+//   return (
+//     <div className='impulsive-effect'>
+//       <h4>Select a Card from the Top Two</h4>
+//       <div>
+//         Selected card:{' '}
+//         {selectedImpulsive ? (
+//           <strong>{selectedImpulsive.Name}</strong>
+//         ) : (
+//           <em>None</em>
+//         )}
+//       </div>
+//       <ul>
+//         {topTwoCards.map((card, index) => (
+//           <li
+//             key={`${card.id}-${index}`}
+//             onClick={() => setSelectedImpulsive(card)}
+//             className={selectedImpulsive?.id === card.id ? 'selected' : ''}
+//             style={{ cursor: 'pointer' }}
+//           >
+//             <strong>{card.Name}</strong>: {card.Text}
+//           </li>
+//         ))}
+//       </ul>
+//       <button onClick={handleConfirm} disabled={!selectedImpulsive}>
+//         Confirm
+//       </button>
+//     </div>
+//   );
+// };
 
 const NostalgicEffect = ({
   playedCards,
@@ -254,10 +254,10 @@ const EffectModal = ({
   const isNostalgic =
     card.Name?.toLowerCase() === 'nostalgic' &&
     Array.isArray(context?.playedCards);
-  const isImpulsive =
-    card.Name?.toLowerCase() === 'impulsive' &&
-    Array.isArray(context?.topTwoIds) &&
-    context?.topTwoIds[0]?.id !== undefined;
+  // const isImpulsive =
+  //   card.Name?.toLowerCase() === 'impulsive' &&
+  //   Array.isArray(context?.topTwoIds) &&
+  //   context?.topTwoIds[0]?.id !== undefined;
 
   return (
     <div className='effect-modal'>
@@ -286,13 +286,15 @@ const EffectModal = ({
           owner={owner}
           onConfirm={(selectedCard) => onComplete(selectedCard)}
         />
-      ) : isImpulsive ? (
-        <ImpulsiveEffect
-          topTwoIds={context.topTwoIds}
-          cardLibrary={cardLibrary}
-          onConfirm={(selectedCardIds) => onComplete(selectedCardIds)}
-        />
-      ) : (
+      )
+      //  : isImpulsive ? (
+      //   <ImpulsiveEffect
+      //     topTwoIds={context.topTwoIds}
+      //     cardLibrary={cardLibrary}
+      //     onConfirm={(selectedCardIds) => onComplete(selectedCardIds)}
+      //   />
+      // ) 
+      : (
         <button onClick={() => onComplete()}>Done</button>
       )}
     </div>
