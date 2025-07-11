@@ -48,7 +48,7 @@ type PlayBoardProps = {
       }[]
     >
   >;
-  onComplete: (result?: any) => void;
+  onComplete: (result: any, otherCardd: string, playerDeck:string) => void;
 };
 
 const PlayBoard = ({
@@ -143,7 +143,7 @@ const PlayBoard = ({
         </div>
       )}
 
-      {playInteraction.length > 0 && (
+      {/* {playInteraction.length > 0 && (
         <EffectModal
           card={playInteraction[0].card}
           owner={playInteraction[0].owner}
@@ -155,7 +155,32 @@ const PlayBoard = ({
           setplayer2Deck={setplayer2Deck}
           onComplete={onComplete}
         />
-      )}
+      )} */}
+      {playInteraction.length > 0 &&
+  (() => {
+    const interaction = playInteraction[0];
+
+    //    if (playInteraction) {
+    //   console.log('✅ playerDecks before EffectModal:', playInteraction[0].playerDecks!);
+    // } else {
+    //   console.log('❌ playerDecks missing in interaction.context', playInteraction);
+    // }
+
+    return (
+      <EffectModal
+        card={interaction.card}
+        owner={interaction.owner}
+        context={interaction.context}
+        negatedPlayers={negatedPlayers}
+        effectHandlers={effectHandlers}
+        cardLibrary={cardLibrary}
+        setplayer1Deck={setplayer1Deck}
+        setplayer2Deck={setplayer2Deck}
+        onComplete={onComplete}
+        playInteraction = {playInteraction}
+      />
+    );
+  })()}
     </div>
   );
 };

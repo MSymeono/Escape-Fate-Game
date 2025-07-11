@@ -15,6 +15,7 @@ type EffectHandler = (
   card: Card,
   owner: 'Player 1' | 'Player 2',
   negatedPlayers: Set<'Player 1' | 'Player 2'>,
+  playerDecks: { Deck1: Card[]; Deck2: Card[] },
   otherCard?: Card
 ) => void;
 
@@ -71,71 +72,78 @@ type EffectHandler = (
 //   );
 // };
 
-const NostalgicEffect = ({
-  playedCards,
-  effectHandlers,
-  cardLibrary,
-  onConfirm,
-  otherCard,
-  negatedPlayers,
-}: {
-  playedCards: Card[];
-  cardLibrary: Card[];
-  effectHandlers: { [key: number]: EffectHandler };
-  negatedPlayers: Set<'Player 1' | 'Player 2'>;
-  onConfirm: (selectedNostalgic: Card[]) => void;
-  otherCard: Card;
-}) => {
-  const [selectedNostalgic, setSelectedNostalgic] = useState<Card | null>(null);
+// const NostalgicEffect = ({
+//   playedCards,
+//   effectHandlers,
+//   cardLibrary,
+//   onConfirm,
+//   otherCard,
+//   negatedPlayers,
+// }: {
+//   playedCards: Card[];
+//   cardLibrary: Card[];
+//   effectHandlers: { [key: number]: EffectHandler };
+//   negatedPlayers: Set<'Player 1' | 'Player 2'>;
+//   onConfirm: (selectedNostalgic: Card[]) => void;
+//   otherCard: Card;
+// }) => {
+//   const [selectedNostalgic, setSelectedNostalgic] = useState<Card | null>(null);
 
-  const handleConfirm = () => {
-    if (!selectedNostalgic) return;
-    if (otherCard) {
-      onConfirm([selectedNostalgic, otherCard]);
-    } else {
-      onConfirm([selectedNostalgic]);
-    }
-  };
+//   const handleConfirm = () => {
+//     if (!selectedNostalgic) return;
+//     if (otherCard) {
+//       onConfirm([selectedNostalgic, otherCard]);
+//     } else {
+//       onConfirm([selectedNostalgic]);
+//     }
+//   };
 
-  return (
-    <div className='nostalgic-effect'>
-      <h4>Select a Card you have already played</h4>
-      <div>
-        Selected card:{' '}
-        {selectedNostalgic ? (
-          <strong>{selectedNostalgic.Name}</strong>
-        ) : (
-          <em>None</em>
-        )}
-      </div>
-      <ul>
-        {playedCards.map((card, index) => (
-          <li
-            key={`${card.id}-${index}`}
-            onClick={() => setSelectedNostalgic(card)}
-            className={selectedNostalgic?.id === card.id ? 'selected' : ''}
-            style={{ cursor: 'pointer' }}
-          >
-            <strong>{card.Name}</strong>: {card.Text}
-          </li>
-        ))}
-      </ul>
-      <button onClick={handleConfirm} disabled={!selectedNostalgic}>
-        Confirm
-      </button>
-    </div>
-  );
-};
+//   return (
+//     <div className='nostalgic-effect'>
+//       <h4>Select a Card you have already played</h4>
+//       <div>
+//         Selected card:{' '}
+//         {selectedNostalgic ? (
+//           <strong>{selectedNostalgic.Name}</strong>
+//         ) : (
+//           <em>None</em>
+//         )}
+//       </div>
+//       <ul>
+//         {playedCards.map((card, index) => (
+//           <li
+//             key={`${card.id}-${index}`}
+//             onClick={() => setSelectedNostalgic(card)}
+//             className={selectedNostalgic?.id === card.id ? 'selected' : ''}
+//             style={{ cursor: 'pointer' }}
+//           >
+//             <strong>{card.Name}</strong>: {card.Text}
+//           </li>
+//         ))}
+//       </ul>
+//       <button onClick={handleConfirm} disabled={!selectedNostalgic}>
+//         Confirm
+//       </button>
+//     </div>
+//   );
+// };
 
 const IndecisiveEffect = ({
   discardIds,
   cardLibrary,
   onConfirm,
+  playInteraction
 }: {
   discardIds: number[];
   cardLibrary: Card[];
-  onConfirm: (selected: Card) => void;
+  playInteraction:any;
+  onConfirm: (
+    selected: Card,
+    otherCard: Card,
+    playerDecks: { Deck1: Card[]; Deck2: Card[] }
+  ) => void;
 }) => {
+  // const { otherCard } = playInteraction
   const discardCards = discardIds
     .map((id) => cardLibrary.find((c) => c.id === id))
     .filter(Boolean) as Card[];
@@ -168,7 +176,10 @@ const IndecisiveEffect = ({
         ))}
       </ul>
       <button
-        onClick={() => selectedIndecisive && onConfirm(selectedIndecisive)}
+        onClick={() =>
+          selectedIndecisive &&
+          onConfirm(selectedIndecisive, otherCard, playerDecks)
+        }
         disabled={!selectedIndecisive}
       >
         Confirm
@@ -181,11 +192,24 @@ const WeaveEffect = ({
   topThree,
   cardLibrary,
   onConfirm,
+  playerDecks,
+  otherCard,
+  playInteraction
 }: {
   topThree: Card[];
   cardLibrary: Card[];
-  onConfirm: (newOrder: Card[]) => void;
+  playerDecks: { Deck1: Card[]; Deck2: Card[] };
+  otherCard: Card;
+  playInteraction:any
+  onConfirm: (
+    newOrder: Card[],
+    otherCard: Card,
+    playerDecks: { Deck1: Card[]; Deck2: Card[] }
+  ) => void;
 }) => {
+  
+  const JSONDecks = JSON.stringify(playerDecks)
+  // console.log(playerDecks, 'Weave EM');
   const [orderedCards, setOrderedCards] = useState<Card[]>([]);
 
   useEffect(() => {
@@ -226,7 +250,9 @@ const WeaveEffect = ({
           </li>
         ))}
       </ul>
-      <button onClick={() => onConfirm(orderedCards)}>Confirm</button>
+      <button onClick={() => onConfirm(orderedCards, otherCard, JSONDecks)}>
+        Confirm
+      </button>
     </div>
   );
 };
@@ -238,22 +264,26 @@ const EffectModal = ({
   cardLibrary,
   effectHandlers,
   onComplete,
+  playInteraction
 }: {
   card: Card;
   owner: 'Player 1' | 'Player 2';
   context: any;
   cardLibrary: Card[];
   effectHandlers: { [key: number]: EffectHandler };
+  playInteraction:any;
   onComplete: (result?: any) => void;
 }) => {
+  const { playerDecks, otherCard } = playInteraction[0];
+  const JSONDecks = JSON.stringify(playerDecks)
   const isWeave =
     card.Name?.toLowerCase() === 'weave' && Array.isArray(context?.topThreeIds);
   const isIndecisive =
     card.Name?.toLowerCase() === 'indecisive' &&
     Array.isArray(context?.discardIds);
-  const isNostalgic =
-    card.Name?.toLowerCase() === 'nostalgic' &&
-    Array.isArray(context?.playedCards);
+  // const isNostalgic =
+  //   card.Name?.toLowerCase() === 'nostalgic' &&
+  //   Array.isArray(context?.playedCards);
   // const isImpulsive =
   //   card.Name?.toLowerCase() === 'impulsive' &&
   //   Array.isArray(context?.topTwoIds) &&
@@ -271,30 +301,34 @@ const EffectModal = ({
           topThree={context.topThreeIds}
           cardLibrary={cardLibrary}
           onConfirm={onComplete}
+          playerDecks={playerDecks}
+          otherCard={otherCard}
         />
       ) : isIndecisive ? (
         <IndecisiveEffect
           discardIds={context.discardIds}
           cardLibrary={cardLibrary}
-          onConfirm={(selectedCard) => onComplete([selectedCard])}
+          playerDecks={playerDecks}
+          otherCard={otherCard}
+          onConfirm={(selectedCard) => onComplete([selectedCard], JSONDecks)}
         />
-      ) : isNostalgic ? (
-        <NostalgicEffect
-          playedCards={context.playedCards}
-          cardLibrary={cardLibrary}
-          effectHandlers={effectHandlers}
-          owner={owner}
-          onConfirm={(selectedCard) => onComplete(selectedCard)}
-        />
-      )
-      //  : isImpulsive ? (
-      //   <ImpulsiveEffect
-      //     topTwoIds={context.topTwoIds}
-      //     cardLibrary={cardLibrary}
-      //     onConfirm={(selectedCardIds) => onComplete(selectedCardIds)}
-      //   />
-      // ) 
-      : (
+      ) : (
+        //  : isNostalgic ? (
+        //   <NostalgicEffect
+        //     playedCards={context.playedCards}
+        //     cardLibrary={cardLibrary}
+        //     effectHandlers={effectHandlers}
+        //     owner={owner}
+        //     onConfirm={(selectedCard) => onComplete(selectedCard)}
+        //   />
+        // )
+        //  : isImpulsive ? (
+        //   <ImpulsiveEffect
+        //     topTwoIds={context.topTwoIds}
+        //     cardLibrary={cardLibrary}
+        //     onConfirm={(selectedCardIds) => onComplete(selectedCardIds)}
+        //   />
+        // )
         <button onClick={() => onComplete()}>Done</button>
       )}
     </div>
