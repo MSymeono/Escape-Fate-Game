@@ -40,7 +40,7 @@ function App() {
       Text: `Take the cards first from the bottom of each player's deck and put them on top.`,
       id: 1,
       Quantity: 1,
-      Priority: 4,
+      Priority: 11,
       Modal: false,
     },
     {
@@ -64,7 +64,7 @@ function App() {
       Text: 'Play a card at random from the top 2 of your deck. Put the other back.',
       id: 4,
       Quantity: 1,
-      Priority: 7,
+      Priority: 6,
       Modal: true,
     },
     {
@@ -96,7 +96,7 @@ function App() {
       Text: `Discard the top card of each player's deck. They have no effect.`,
       id: 8,
       Quantity: 1,
-      Priority: 10,
+      Priority: 9,
       Modal: false,
     },
     {
@@ -120,7 +120,7 @@ function App() {
       Text: `Play the top card of your opponent's deck.`,
       id: 11,
       Quantity: 1,
-      Priority: 6,
+      Priority: 5,
       Modal: false,
     },
     {
@@ -128,7 +128,7 @@ function App() {
       Text: `Play the top 2 cards of your deck.`,
       id: 12,
       Quantity: 1,
-      Priority: 8,
+      Priority: 7,
       Modal: false,
     },
     {
@@ -144,7 +144,7 @@ function App() {
       Text: `Your opponent plays the top card of their deck.`,
       id: 14,
       Quantity: 2,
-      Priority: 5,
+      Priority: 4,
       Modal: false,
     },
     {
@@ -160,7 +160,7 @@ function App() {
       Text: `The card you play next turn is played twice.`,
       id: 16,
       Quantity: 1,
-      Priority: null,
+      Priority: 15,
       Modal: false,
     },
     {
@@ -184,7 +184,7 @@ function App() {
       Text: `If you have more cards in play than your opponent, discard the top card of their deck.`,
       id: 19,
       Quantity: 1,
-      Priority: 11,
+      Priority: 10,
       Modal: false,
     },
     {
@@ -200,7 +200,7 @@ function App() {
       Text: `Count the remaining cards in both decks. If your opponent has more, discard the top card of their deck. It has no effect.`,
       id: 21,
       Quantity: 2,
-      Priority: 9,
+      Priority: 8,
       Modal: false,
     },
     {
@@ -208,7 +208,7 @@ function App() {
       Text: `You lose.`,
       id: 22,
       Quantity: 2,
-      Priority: 15,
+      Priority: 16,
       Modal: false,
     },
   ];
@@ -266,6 +266,9 @@ function App() {
   const [doubledPlayers, setDoubledPlayers] = useState<
     Set<'Player 1' | 'Player 2'>
   >(new Set());
+  const [quadrupledPlayers, setQuadrupledPlayers] = useState<
+    Set<'Player 1' | 'Player 2'>
+  >(new Set());
   const [skippedPlayers, setSkippedPlayers] = useState<
     Set<'Player 1' | 'Player 2'>
   >(new Set());
@@ -299,7 +302,7 @@ function App() {
           id: 21,
           Owner: 'Player 1',
           Name: 'Measure',
-          Priority: 9,
+          Priority: 8,
           Multiplier: 1,
           Text: `Count the remaining cards in both decks. If your opponent has more, discard the top card of their deck. It has no effect.`,
         },
@@ -307,7 +310,7 @@ function App() {
           id: 20,
           Owner: 'Player 1',
           Name: 'Weave',
-          Priority: 3,
+          Priority: 2,
           Multiplier: 1,
           Text: `Look at the top 3 cards of your deck and put them back in any order.`,
         },
@@ -318,7 +321,7 @@ function App() {
           id: 21,
           Owner: 'Player 2',
           Name: 'Measure',
-          Priority: 9,
+          Priority: 8,
           Multiplier: 1,
           Text: `Count the remaining cards in both decks. If your opponent has more, discard the top card of their deck. It has no effect.`,
         },
@@ -326,7 +329,7 @@ function App() {
           id: 20,
           Owner: 'Player 2',
           Name: 'Weave',
-          Priority: 3,
+          Priority: 2,
           Multiplier: 1,
           Text: `Look at the top 3 cards of your deck and put them back in any order.`,
         },
@@ -641,7 +644,10 @@ function App() {
       localNegated.add(target);
       const playZone = Owner === 'Player 1' ? playZone2 : playZone1;
       const cardName = playZone[playZone.length - 1].Name;
-      setGameLog((prev) => [...prev, `Irreverent negated ${cardName}.`]);
+      setGameLog((prev) => [
+        ...prev,
+        ` ${Owner}'s Irreverent negated ${target}'s ${cardName}.`,
+      ]);
     },
     //Free
     7: (card, Owner, localNegated, playerDecks) => {
@@ -701,8 +707,11 @@ function App() {
         }
       }
       if (!cardToTrigger) return;
-      const handler = effectHandlers[cardToTrigger.id];
+      if (cardToTrigger.Name === 'Strategic') {
+        setQuadrupledPlayers((prev) => new Set(prev).add(Owner));
+      }
 
+      const handler = effectHandlers[cardToTrigger.id];
       if (handler) {
         setGameLog((prev) => [
           ...prev,
@@ -775,7 +784,7 @@ function App() {
       const deck = Owner === 'Player 1' ? playerDecks.Deck1 : playerDecks.Deck2;
 
       const topTwo = [...deck].slice(-2);
-      console.log(topTwo);
+      // console.log(topTwo);
       topTwo.reverse().forEach((card) => {
         setGameLog((prev) => [
           ...prev,
@@ -795,7 +804,6 @@ function App() {
       });
     },
     // Rapid
-
     13: (card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
@@ -940,7 +948,7 @@ function App() {
           // setplayer1Deck((prev) => prev.slice(0, -1));
           setGameLog((prev) => [
             ...prev,
-            `Player 2 discarded the top card of Player 1's deck.`,
+            `Player 2 discarded the top card of Player 1's deck using Wisened.`,
           ]);
         }
       }
@@ -1060,6 +1068,7 @@ function App() {
       if (latestP1.id === 20 || latestP2.id === 20) {
         if (latestP1.id === 20 && latestP2.id === 20) {
           const handler = effectHandlers[20];
+          // problem right now where the second call for weave is not getting the last known value of p1Deck because we're calling it with the old player Decks.
           handler(latestP1, latestP1.Owner!, localNegated, playerDecks);
           handler(latestP2, latestP2.Owner!, localNegated, playerDecks);
         } else {
@@ -1117,10 +1126,10 @@ function App() {
           }
         }
       });
-      console.log(playerDecks, 'playerDecks');
+      // console.log(playerDecks, 'playerDecks');
+      setplayer1Deck(playerDecks.Deck1);
+      setplayer2Deck(playerDecks.Deck2);
     }
-    setplayer1Deck(playerDecks.Deck1);
-    setplayer2Deck(playerDecks.Deck2);
     // doing this so we can actually have Covetous take the card played last turn, rather than the most recent one. In order to do this, we'll use a card array and have Covetous always look at position 0 for p2, 1 for p1.
     if (latestP1 && latestP2) {
       setCardsPlayedLastTurn([latestP1, latestP2]);
@@ -1151,7 +1160,7 @@ function App() {
       ];
     }
     setDeckArray(tempArray);
-    console.log(tempArray);
+    // console.log(tempArray);
     setGameLog((prev) => [...prev, 'shuffled deck']);
   };
 
@@ -1291,11 +1300,11 @@ function App() {
         Array.isArray(result) &&
         result.every((r: any) => typeof r.id === 'number')
       ) {
-        console.log(playerDecks, 'Weave HIC', result);
-
+        const Owner = result[0].Owner;
+        // console.log(playerDecks, 'Weave HIC', result, 'Owner', Owner);
         const localNegated = new Set(negatedPlayers);
         const reorderedCards = result as Card[];
-        console.log(reorderedCards, 'top3');
+        // console.log(reorderedCards, 'top3');
         const sliceSize = reorderedCards.length;
         if (otherCard) {
           const handler = effectHandlers[otherCard.id];
@@ -1303,26 +1312,28 @@ function App() {
           sorted.sort((a, b) => (a ?? 99) - (b ?? 99));
           for (let i = 0; i < sorted.length; i++) {
             if (sorted[i] === 2) {
-              console.log('we are in a stage of the for loop for id=2');
+              // console.log('we are in a stage of the for loop for id=2');
               if (Owner === 'Player 1') {
+                // console.log(Owner);
                 let p1Deck = playerDecks.Deck1.slice(
                   0,
                   playerDecks.Deck1.length - sliceSize
                 );
                 p1Deck = [...p1Deck, ...reorderedCards];
-                console.log(p1Deck, 'p1', playerDecks.Deck1);
+                // console.log(p1Deck, 'p1', playerDecks.Deck1);
                 playerDecks.Deck1 = p1Deck;
                 // setplayer1Deck((prev) => {
                 //   const rest = prev.slice(0, prev.length - sliceSize);
                 //   return [...rest, ...reorderedCards];
                 // });
               } else {
+                // console.log(Owner);
                 let p2Deck = playerDecks.Deck2.slice(
                   0,
                   playerDecks.Deck2.length - sliceSize
                 );
                 p2Deck = [...p2Deck, ...reorderedCards];
-                console.log(p2Deck, 'p2', playerDecks.Deck2);
+                // console.log(p2Deck, 'p2', playerDecks.Deck2);
                 playerDecks.Deck2 = p2Deck;
 
                 // setplayer2Deck((prev) => {
@@ -1331,37 +1342,41 @@ function App() {
                 // });
               }
             } else {
-              console.log('we are in a stage of the for loop for id!=2');
+              // console.log('we are in a stage of the for loop for id!=2');
               handler(otherCard, otherCard.Owner!, localNegated, playerDecks);
             }
           }
+          setplayer1Deck(playerDecks.Deck1);
+          setplayer2Deck(playerDecks.Deck2);
         } else {
-          console.log('we are in a stage of the for loop for id=2');
+          // console.log('we are in a stage of the for loop for id=2');
           if (Owner === 'Player 1') {
+            // console.log(Owner);
             let p1Deck = playerDecks.Deck1.slice(
               0,
               playerDecks.Deck1.length - sliceSize
             );
             p1Deck = [...p1Deck, ...reorderedCards];
-            console.log(p1Deck, 'p1', playerDecks.Deck1);
-            playerDecks.Deck1 = p1Deck;
+            playerDecks.Deck1 = [...p1Deck];
+            // console.log(p1Deck, 'p1', playerDecks.Deck1);
+            setplayer1Deck([...p1Deck]);
             // setplayer1Deck((prev) => {
             //   const rest = prev.slice(0, prev.length - sliceSize);
             //   return [...rest, ...reorderedCards];
             // });
           } else {
+            // console.log(Owner);
             let p2Deck = playerDecks.Deck2.slice(
               0,
               playerDecks.Deck2.length - sliceSize
             );
             p2Deck = [...p2Deck, ...reorderedCards];
-            console.log(p2Deck, 'p2', playerDecks.Deck2);
             playerDecks.Deck2 = p2Deck;
+            // console.log(p2Deck, 'p2', playerDecks.Deck2);
+            setplayer2Deck([...p2Deck]);
           }
         }
-        console.log('p1', playerDecks.Deck1, 'p2', playerDecks.Deck2);
-        setplayer1Deck(playerDecks.Deck1);
-        setplayer2Deck(playerDecks.Deck2);
+        // console.log('p1', playerDecks.Deck1, 'p2', playerDecks.Deck2);
         setGameLog((prev) => [
           ...prev,
           `${Owner} wove the top ${sliceSize} cards of their deck.`,
@@ -1372,114 +1387,126 @@ function App() {
         result.length === 1
       ) {
         const localNegated = new Set(negatedPlayers);
-
+        // console.log(Owner);
+        const selectedCard = result[0] as Card;
+        selectedCard.Owner = Owner;
         if (otherCard) {
           const handler = effectHandlers[otherCard.id];
-          const sorted: number[] = [2, otherCard.Priority ?? 99];
+          const sorted: number[] = [3, otherCard.Priority ?? 99];
           sorted.sort((a, b) => (a ?? 99) - (b ?? 99));
           for (let i = 0; i < sorted.length; i++) {
             if (sorted[i] === 3) {
-              const selectedCard = result[0] as Card;
-              selectedCard.Owner = Owner;
-
               if (Owner === 'Player 1') {
                 playerDecks.Deck1.push(selectedCard);
                 // setplayer1Deck((prev) => [...prev, selectedCard]);
               } else {
-                playerDecks.Deck1.push(selectedCard);
-                setplayer2Deck((prev) => [...prev, selectedCard]);
+                playerDecks.Deck2.push(selectedCard);
+                // setplayer2Deck((prev) => [...prev, selectedCard]);
               }
 
               setGameLog((prev) => [
                 ...prev,
-                `Indecisive added ${selectedCard.Name} to ${Owner}'s deck.`,
+                `Indecisive put a card on top of ${Owner}'s deck.`,
               ]);
             } else {
               handler(otherCard, otherCard.Owner!, localNegated, playerDecks);
             }
           }
+        } else {
+          if (Owner === 'Player 1') {
+            playerDecks.Deck1.push(selectedCard);
+            // setplayer1Deck((prev) => [...prev, selectedCard]);
+          } else {
+            playerDecks.Deck2.push(selectedCard);
+            // setplayer2Deck((prev) => [...prev, selectedCard]);
+          }
         }
+        const discardPileClone = discardPile.filter(
+          (id) => id !== selectedCard.id
+        );
+        discard(discardPileClone);
       }
-      // } else if (card.Name === 'Nostalgic' && Array.isArray(result)) {
-      //   const selectedCard: Card = result[0];
-      //   const otherCard: Card = result[1];
-      //   if (otherCard) {
-      //     const sorted: Card[] = [selectedCard, otherCard];
-      //     sorted.sort((a, b) => (a!.Priority ?? 99) - (b!.Priority ?? 99));
-      //     const localNegated = new Set(negatedPlayers);
-      //     const modalPromises: Promise<void>[] = [];
-      //     sorted.forEach(({ card, Owner }) => {
-      //       const handler = effectHandlers[card.id];
-      //       if (!handler) return;
-      //       const timesToRun = doubledPlayers.has(Owner!) ? 2 : 1;
-      //       if (doubledPlayers.has(Owner!)) {
-      //         setDoubledPlayers((prev) => {
-      //           const next = new Set(prev);
-      //           next.delete(Owner!);
-      //           return next;
-      //         });
-      //       }
-
-      //       for (let i = 0; i < timesToRun; i++) {
-      //         if (card.Modal) {
-      //           modalPromises.push(
-      //             new Promise((resolve) => {
-      //               modalResolvers.current.push(resolve);
-      //               handler(card, Owner!, localNegated);
-      //             })
-      //           );
-      //         } else {
-      //           handler(card, Owner!, localNegated);
-      //         }
-      //       }
-      //     });
-      //   } else {
-      //     const handler = effectHandlers[selectedCard.id];
-      //     handler(selectedCard, selectedCard.Owner!, negatedPlayers);
-      //   }
-      //   setGameLog((prev) => [
-      //     ...prev,
-      //     `${Owner} replayed ${selectedCard.Name} using Nostalgic.`,
-      //   ]);
-      // const handler = effectHandlers[selectedCard.id];
-      // handler(selectedCard, Owner, negatedPlayers)
-      // this goes first
-      // if (card.Name === 'Impulsive') {
-      //   const selectedCard: Card = result?.[0];
-      //   const unselected = context.topTwoIds.find(
-      //     (c: Card) => c.id !== selectedCard.id
-      //   );
-      //   if (selectedCard) {
-      //     if (Owner === 'Player 1') {
-      //       setplayer1Deck((prev) => [
-      //         ...prev.slice(0, -2),
-      //         ...(unselected ? [unselected] : []),
-      //       ]);
-      //       setplayZone1((prev) => [...prev, selectedCard]);
-      //     } else {
-      //       setplayer2Deck((prev) => [
-      //         ...prev.slice(0, -2),
-      //         ...(unselected ? [unselected] : []),
-      //       ]);
-      //       setplayZone2((prev) => [...prev, selectedCard]);
-      //     }
-      //     const handler = effectHandlers[selectedCard.id];
-      //     handler(selectedCard, Owner, negatedPlayers);
-      //     setGameLog((prev) => [
-      //       ...prev,
-      //       `${Owner} played ${selectedCard.Name} using Impulsive.`,
-      //     ]);
-      //   }
-      // } else
+      setplayer1Deck(playerDecks.Deck1);
+      setplayer2Deck(playerDecks.Deck2);
     }
+    // } else if (card.Name === 'Nostalgic' && Array.isArray(result)) {
+    //   const selectedCard: Card = result[0];
+    //   const otherCard: Card = result[1];
+    //   if (otherCard) {
+    //     const sorted: Card[] = [selectedCard, otherCard];
+    //     sorted.sort((a, b) => (a!.Priority ?? 99) - (b!.Priority ?? 99));
+    //     const localNegated = new Set(negatedPlayers);
+    //     const modalPromises: Promise<void>[] = [];
+    //     sorted.forEach(({ card, Owner }) => {
+    //       const handler = effectHandlers[card.id];
+    //       if (!handler) return;
+    //       const timesToRun = doubledPlayers.has(Owner!) ? 2 : 1;
+    //       if (doubledPlayers.has(Owner!)) {
+    //         setDoubledPlayers((prev) => {
+    //           const next = new Set(prev);
+    //           next.delete(Owner!);
+    //           return next;
+    //         });
+    //       }
 
+    //       for (let i = 0; i < timesToRun; i++) {
+    //         if (card.Modal) {
+    //           modalPromises.push(
+    //             new Promise((resolve) => {
+    //               modalResolvers.current.push(resolve);
+    //               handler(card, Owner!, localNegated);
+    //             })
+    //           );
+    //         } else {
+    //           handler(card, Owner!, localNegated);
+    //         }
+    //       }
+    //     });
+    //   } else {
+    //     const handler = effectHandlers[selectedCard.id];
+    //     handler(selectedCard, selectedCard.Owner!, negatedPlayers);
+    //   }
+    //   setGameLog((prev) => [
+    //     ...prev,
+    //     `${Owner} replayed ${selectedCard.Name} using Nostalgic.`,
+    //   ]);
+    // const handler = effectHandlers[selectedCard.id];
+    // handler(selectedCard, Owner, negatedPlayers)
+    // this goes first
+    // if (card.Name === 'Impulsive') {
+    //   const selectedCard: Card = result?.[0];
+    //   const unselected = context.topTwoIds.find(
+    //     (c: Card) => c.id !== selectedCard.id
+    //   );
+    //   if (selectedCard) {
+    //     if (Owner === 'Player 1') {
+    //       setplayer1Deck((prev) => [
+    //         ...prev.slice(0, -2),
+    //         ...(unselected ? [unselected] : []),
+    //       ]);
+    //       setplayZone1((prev) => [...prev, selectedCard]);
+    //     } else {
+    //       setplayer2Deck((prev) => [
+    //         ...prev.slice(0, -2),
+    //         ...(unselected ? [unselected] : []),
+    //       ]);
+    //       setplayZone2((prev) => [...prev, selectedCard]);
+    //     }
+    //     const handler = effectHandlers[selectedCard.id];
+    //     handler(selectedCard, Owner, negatedPlayers);
+    //     setGameLog((prev) => [
+    //       ...prev,
+    //       `${Owner} played ${selectedCard.Name} using Impulsive.`,
+    //     ]);
+    //   }
+    // } else
     setPlayInteraction((prev) => prev.slice(1));
     // console.log(playInteraction)
     const resolver = modalResolvers.current.pop();
 
     if (resolver) resolver();
-    setplayer1Deck(playerDecks.Deck1);
-    setplayer2Deck(playerDecks.Deck2);
+    // setplayer1Deck(playerDecks.Deck1);
+    // setplayer2Deck(playerDecks.Deck2);
   };
 
   return (

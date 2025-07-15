@@ -132,11 +132,15 @@ const IndecisiveEffect = ({
   discardIds,
   cardLibrary,
   onConfirm,
-  playInteraction
+  playInteraction,
+  playerDecks,
+  otherCard,
 }: {
   discardIds: number[];
   cardLibrary: Card[];
-  playInteraction:any;
+
+  playInteraction: any;
+  otherCard: Card;
   onConfirm: (
     selected: Card,
     otherCard: Card,
@@ -144,6 +148,8 @@ const IndecisiveEffect = ({
   ) => void;
 }) => {
   // const { otherCard } = playInteraction
+  const JSONDecks = JSON.stringify(playerDecks);
+  // console.log(JSONDecks);
   const discardCards = discardIds
     .map((id) => cardLibrary.find((c) => c.id === id))
     .filter(Boolean) as Card[];
@@ -178,7 +184,7 @@ const IndecisiveEffect = ({
       <button
         onClick={() =>
           selectedIndecisive &&
-          onConfirm(selectedIndecisive, otherCard, playerDecks)
+          onConfirm(selectedIndecisive, otherCard, JSONDecks)
         }
         disabled={!selectedIndecisive}
       >
@@ -194,21 +200,20 @@ const WeaveEffect = ({
   onConfirm,
   playerDecks,
   otherCard,
-  playInteraction
+  playInteraction,
 }: {
   topThree: Card[];
   cardLibrary: Card[];
   playerDecks: { Deck1: Card[]; Deck2: Card[] };
   otherCard: Card;
-  playInteraction:any
+  playInteraction: any;
   onConfirm: (
     newOrder: Card[],
     otherCard: Card,
     playerDecks: { Deck1: Card[]; Deck2: Card[] }
   ) => void;
 }) => {
-  
-  const JSONDecks = JSON.stringify(playerDecks)
+  const JSONDecks = JSON.stringify(playerDecks);
   // console.log(playerDecks, 'Weave EM');
   const [orderedCards, setOrderedCards] = useState<Card[]>([]);
 
@@ -264,18 +269,18 @@ const EffectModal = ({
   cardLibrary,
   effectHandlers,
   onComplete,
-  playInteraction
+  playInteraction,
 }: {
   card: Card;
   owner: 'Player 1' | 'Player 2';
   context: any;
   cardLibrary: Card[];
   effectHandlers: { [key: number]: EffectHandler };
-  playInteraction:any;
-  onComplete: (result?: any) => void;
+  playInteraction: any;
+  onComplete: (result: any, otherCard: Card, JSONDecks: string) => void;
 }) => {
   const { playerDecks, otherCard } = playInteraction[0];
-  const JSONDecks = JSON.stringify(playerDecks)
+  const JSONDecks = JSON.stringify(playerDecks);
   const isWeave =
     card.Name?.toLowerCase() === 'weave' && Array.isArray(context?.topThreeIds);
   const isIndecisive =
@@ -310,7 +315,9 @@ const EffectModal = ({
           cardLibrary={cardLibrary}
           playerDecks={playerDecks}
           otherCard={otherCard}
-          onConfirm={(selectedCard) => onComplete([selectedCard], JSONDecks)}
+          onConfirm={(selectedCard) =>
+            onComplete([selectedCard], otherCard, JSONDecks)
+          }
         />
       ) : (
         //  : isNostalgic ? (
