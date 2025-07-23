@@ -12,17 +12,19 @@ type CardType = {
 };
 
 type DraftBoardProps = {
-  resourcefulDrafted: boolean;
   activePlayer: string;
   draftArray: number[];
   cardLibrary: CardType[];
   onCardClick: (card: CardType) => void;
   onShuffle: () => void;
   onDeal: () => void;
+  phase: string;
+  deckArray: number[];
+  myPlayerId: string | null;
+  resourcefulDrafted: null | 'Player 1' | 'Player 2';
 };
 
 const DraftBoard = ({
-  resourcefulDrafted,
   activePlayer,
   deckArray,
   draftArray,
@@ -31,12 +33,18 @@ const DraftBoard = ({
   onShuffle,
   phase,
   onDeal,
+  myPlayerId,
+  resourcefulDrafted,
 }: DraftBoardProps) => {
   return (
     <>
       <h1>Draft Phase</h1>
-        {resourcefulDrafted && <h2>Your opponent drafted Resourceful</h2>}
-      <h2 className={activePlayer==='Player 1'? 'player1-turn': 'player2-turn'}>{activePlayer}'s turn to draft</h2>
+      {resourcefulDrafted && (
+        <div className="resourceful-indicator">
+          {resourcefulDrafted} drafted Resourceful!
+        </div>
+      )}
+      <h2 className={activePlayer === 'Player 1' ? 'player1-turn' : 'player2-turn'}>{activePlayer}'s turn to draft</h2>
       <div className='buttons'>
         {deckArray.length === 24 && (
           <div className='indivButton'>
@@ -49,21 +57,26 @@ const DraftBoard = ({
           </div>
         )}
       </div>
-
-      <div className='card-grid'>
-        {draftArray.map((id, index) => {
-          const card = cardLibrary.find((card) => card.id === id);
-          if (!card) return null;
-          return (
-            <Card
-              key={`${id}-${index}`}
-              card={card}
-              phase={phase}
-              onClick={() => onCardClick(card)}
-            />
-          );
-        })}
-      </div>
+      {myPlayerId === activePlayer ? (
+        <div className='card-grid'>
+          {draftArray.map((id, index) => {
+            const card = cardLibrary.find((card) => card.id === id);
+            if (!card) return null;
+            return (
+              <Card
+                key={`${id}-${index}`}
+                card={card}
+                phase={phase}
+                onClick={() => onCardClick(card)}
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <div className='card-grid'>
+          <p>Waiting for the other player to draft...</p>
+        </div>
+      )}
     </>
   );
 };

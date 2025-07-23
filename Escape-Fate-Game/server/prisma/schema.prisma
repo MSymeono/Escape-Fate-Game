@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Lobby {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  players   Player[]
+  gameState GameState?
+}
+
+model Player {
+  id      String @id @default(cuid())
+  name    String
+  socketId String
+  lobby   Lobby  @relation(fields: [lobbyId], references: [id])
+  lobbyId String
+}
+
+model GameState {
+  id        String   @id @default(cuid())
+  state     Json
+  lobby     Lobby    @relation(fields: [lobbyId], references: [id])
+  lobbyId   String   @unique
+  updatedAt DateTime @updatedAt
+}

@@ -5,8 +5,10 @@ import './playBoard.css';
 
 type EffectHandler = (
   card: Card,
-  owner: 'Player 1' | 'Player 2',
-  negatedPlayers: Set<'Player 1' | 'Player 2'>
+  Owner: 'Player 1' | 'Player 2',
+  negatedPlayers: Set<'Player 1' | 'Player 2'>,
+  playerDecks: { Deck1: Card[]; Deck2: Card[] },
+  otherCard?: Card
 ) => void;
 
 type Card = {
@@ -20,10 +22,10 @@ type Card = {
 };
 
 type PlayBoardProps = {
-  player1Deck: number[];
-  setplayer1Deck: React.Dispatch<React.SetStateAction<number[]>>;
-  player2Deck: number[];
-  setplayer2Deck: React.Dispatch<React.SetStateAction<number[]>>;
+  player1Deck: Card[];
+  setplayer1Deck: React.Dispatch<React.SetStateAction<Card[]>>;
+  player2Deck: Card[];
+  setplayer2Deck: React.Dispatch<React.SetStateAction<Card[]>>;
   playZone1: Card[];
   playZone2: Card[];
   cardLibrary: Card[];
@@ -36,19 +38,20 @@ type PlayBoardProps = {
   phase: string;
   playInteraction: {
     card: Card;
-    owner: 'Player 1' | 'Player 2';
+    Owner: 'Player 1' | 'Player 2';
     context: any;
   }[];
   setPlayInteraction: React.Dispatch<
     React.SetStateAction<
       {
         card: Card;
-        owner: 'Player 1' | 'Player 2';
+        Owner: 'Player 1' | 'Player 2';
         context: any;
       }[]
     >
   >;
-  onComplete: (result: any, otherCardd: string, playerDeck:string) => void;
+  onComplete: (result: any, otherCard: Card, playerDeck: string) => void;
+  myPlayerId: string | null;
 };
 
 const PlayBoard = ({
@@ -67,6 +70,7 @@ const PlayBoard = ({
   onComplete,
   negatedPlayers,
   setPlayInteraction,
+  myPlayerId,
 }: PlayBoardProps) => {
   const [showStack, setShowStack] = useState(false);
 
@@ -76,8 +80,7 @@ const PlayBoard = ({
     <div className='card-stack'>
       {stack.length > 0 &&
         (() => {
-          const id = stack[stack.length - 1].id;
-          const card = getCard(id);
+          const card = stack[stack.length - 1];
           return card ? (
             <div className='stacked-card' style={{ top: '0px', zIndex: 99 }}>
               <Card card={card} phase='play' showText />
@@ -110,32 +113,26 @@ const PlayBoard = ({
           <div className='stack-content'>
             <h2>Player 1 Stack</h2>
             <div className='horizontal-stack'>
-              {playZone1.map((cardObj, i) => {
-                const card = getCard(cardObj.id);
-                return card ? (
-                  <Card
-                    key={`${cardObj.id}-${i}`}
-                    card={card}
-                    phase='play'
-                    owner={cardObj.Owner}
-                  />
-                ) : null;
-              })}
+              {playZone1.map((cardObj, i) => (
+                <Card
+                  key={`${cardObj.id}-${i}`}
+                  card={cardObj}
+                  phase='play'
+                  owner={cardObj.Owner}
+                />
+              ))}
             </div>
 
             <h2>Player 2 Stack</h2>
             <div className='horizontal-stack'>
-              {playZone2.map((cardObj, i) => {
-                const card = getCard(cardObj.id);
-                return card ? (
-                  <Card
-                    key={`${cardObj.id}-${i}`}
-                    card={card}
-                    phase='play'
-                    owner={cardObj.Owner}
-                  />
-                ) : null;
-              })}
+              {playZone2.map((cardObj, i) => (
+                <Card
+                  key={`${cardObj.id}-${i}`}
+                  card={cardObj}
+                  phase='play'
+                  owner={cardObj.Owner}
+                />
+              ))}
             </div>
 
             <button onClick={() => setShowStack(false)}>Close</button>
@@ -146,7 +143,7 @@ const PlayBoard = ({
       {/* {playInteraction.length > 0 && (
         <EffectModal
           card={playInteraction[0].card}
-          owner={playInteraction[0].owner}
+          owner={playInteraction[0].Owner}
           context={playInteraction[0].context}
           negatedPlayers = {negatedPlayers}
           effectHandlers={effectHandlers}
@@ -157,30 +154,20 @@ const PlayBoard = ({
         />
       )} */}
       {playInteraction.length > 0 &&
-  (() => {
-    const interaction = playInteraction[0];
-
-    //    if (playInteraction) {
-    //   console.log('✅ playerDecks before EffectModal:', playInteraction[0].playerDecks!);
-    // } else {
-    //   console.log('❌ playerDecks missing in interaction.context', playInteraction);
-    // }
-
-    return (
-      <EffectModal
-        card={interaction.card}
-        owner={interaction.owner}
-        context={interaction.context}
-        negatedPlayers={negatedPlayers}
-        effectHandlers={effectHandlers}
-        cardLibrary={cardLibrary}
-        setplayer1Deck={setplayer1Deck}
-        setplayer2Deck={setplayer2Deck}
-        onComplete={onComplete}
-        playInteraction = {playInteraction}
-      />
-    );
-  })()}
+        playInteraction[0].Owner === myPlayerId && (
+          <EffectModal
+            card={playInteraction[0].card}
+            owner={playInteraction[0].Owner}
+            context={playInteraction[0].context}
+            negatedPlayers={negatedPlayers}
+            effectHandlers={effectHandlers}
+            cardLibrary={cardLibrary}
+            setplayer1Deck={setplayer1Deck}
+            setplayer2Deck={setplayer2Deck}
+            onComplete={onComplete}
+            playInteraction={playInteraction}
+          />
+        )}
     </div>
   );
 };
