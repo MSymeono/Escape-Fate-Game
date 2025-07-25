@@ -1,7 +1,7 @@
 import './cardList.css'
 
 
-const CardList = ({ onClose, cardLibrary }: { onClose: () => void }) => {
+const CardList = ({ onClose, cardLibrary }: { onClose: () => void; cardLibrary: any[] }) => {
     return (
       <div className="card-list">
         <div className="card-content">

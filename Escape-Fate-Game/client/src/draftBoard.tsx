@@ -1,4 +1,3 @@
-// DraftBoard.tsx
 import React from 'react';
 import Card from './Card';
 import './draftBoard.css';
@@ -19,6 +18,8 @@ type DraftBoardProps = {
   onCardClick: (card: CardType) => void;
   onShuffle: () => void;
   onDeal: () => void;
+  phase: string;
+  deckArray: number[];
 };
 
 const DraftBoard = ({

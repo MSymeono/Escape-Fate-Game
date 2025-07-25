@@ -157,7 +157,7 @@ function App() {
     },
     {
       Name: 'Strategic',
-      Text: `The card you play next turn is played twice.`,
+      Text: `The next card you play is played twice.`,
       id: 16,
       Quantity: 1,
       Priority: 15,
@@ -1527,13 +1527,12 @@ function App() {
         <button onClick={() => setGameLogOverlay('On')}>Game Log</button>
       )}
       {gameLogOverlay === 'On' && (
-        <GameLog gameLog={gameLog} onClose={() => setGameLogOverlay('Off')} />
+        <GameLog log={gameLog} onClose={() => setGameLogOverlay('Off')} />
       )}
       <>
         {phase === 'draft' ? (
           <DraftBoard
             activePlayer={activePlayer}
-            deckArray={deckArray}
             draftArray={draftArray}
             cardLibrary={cardLibrary}
             onCardClick={cardClick}
@@ -1541,6 +1540,7 @@ function App() {
             phase={phase}
             onDeal={deal}
             resourcefulDrafted={resourcefulDrafted}
+            deckArray={deckArray}
           />
         ) : (
           <PlayBoard
