@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import './App.css';
+import './index.css';
 import Card from './Card';
 import DraftBoard from './draftBoard';
 import PlayBoard from './playBoard';
@@ -1512,7 +1513,7 @@ function App() {
   return (
     <div>
       {rules === 'Off' && <button onClick={() => setRules('On')}>Rules</button>}
-      {rules === 'On' && <RulesOverlay onClose={() => setRules('Off')} />}
+      {rules === 'On' && <RulesOverlay onClose={() => setRules('Off')} phase={phase} />}
 
       {cardsList === 'Off' && (
         <button onClick={() => setCardList('On')}>Card List</button>

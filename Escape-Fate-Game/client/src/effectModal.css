@@ -2,9 +2,29 @@
     position: fixed;
     top: 20%;
     left: 20%;
-    background: white;
-    border: 3px solid red; /* just for visibility */
+    background: #0F828C;
+    border: 3px solid red;
     padding: 1rem;
     z-index: 1000;
-  }
+    color: var(--popup-text-color);
+}
+
+.effect-modal h4 + div,
+.effect-modal h4 + ul,
+.effect-modal h4 + button {
+    text-align: left;
+}
+
+.effect-modal ul {
+    text-align: left;
+    padding-left: 2rem;
+}
+
+.effect-modal li {
+    text-align: left;
+}
+
+.effect-modal button {
+    text-align: left;
+}
   

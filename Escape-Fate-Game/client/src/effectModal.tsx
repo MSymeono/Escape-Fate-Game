@@ -281,6 +281,7 @@ const EffectModal = ({
 }) => {
   const { playerDecks, otherCard } = playInteraction[0];
   const JSONDecks = JSON.stringify(playerDecks);
+  const Owner = card.Owner;
   const isWeave =
     card.Name?.toLowerCase() === 'weave' && Array.isArray(context?.topThreeIds);
   const isIndecisive =
@@ -297,7 +298,7 @@ const EffectModal = ({
   return (
     <div className='effect-modal'>
       <h2>
-        {card.Name} — {owner}
+        {card.Name} — {Owner}
       </h2>
       <p>{card.Text}</p>
 
