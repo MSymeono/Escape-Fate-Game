@@ -2,6 +2,8 @@
   perspective: 1000px;
   width: clamp(120px, 18vw, 180px);
   height: clamp(160px, 26vw, 260px);
+  z-index: 10;
+  position: relative;
 }
 
 .card-container h3,

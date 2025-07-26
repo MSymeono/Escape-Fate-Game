@@ -3,7 +3,7 @@
     top: 20%;
     left: 20%;
     background: #0F828C;
-    border: 3px solid red;
+    border: 3px solid #320A6B;
     padding: 1rem;
     z-index: 1000;
     color: var(--popup-text-color);

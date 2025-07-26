@@ -1512,6 +1512,7 @@ function App() {
 
   return (
     <div>
+      <h1>Escape Fate</h1>
       {rules === 'Off' && <button onClick={() => setRules('On')}>Rules</button>}
       {rules === 'On' && <RulesOverlay onClose={() => setRules('Off')} phase={phase} />}
 

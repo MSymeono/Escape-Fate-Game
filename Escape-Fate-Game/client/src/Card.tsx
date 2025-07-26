@@ -1,4 +1,4 @@
-import CardBack from './assets/CardBack.png'
+import CardBack from '/BackofCard.png.png'
 import './Card.css'
 type CardProps = {
     card: CardType;

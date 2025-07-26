@@ -4,12 +4,12 @@
 }
 
 .player1-turn {
-  color: #78B9B5;
+  color: #6bf7ed;
   font-weight: bold;
 }
 
 .player2-turn {
-  color: crimson;
+  color: rgb(155, 156, 255);
   font-weight: bold;
 }
 

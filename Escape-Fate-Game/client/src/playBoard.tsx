@@ -89,7 +89,7 @@ const PlayBoard = ({
 
   return (
     <div className='play-board'>
-      <h1>Play Phase</h1>
+      <h2>Play Phase</h2>
       <button onClick={nextCards}>Play Next Cards</button>
       <button onClick={() => setShowStack(true)}>View Stack</button>
 
