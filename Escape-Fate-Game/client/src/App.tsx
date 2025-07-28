@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import './App.css';
 import './index.css';
-import Card from './Card';
+
 import DraftBoard from './draftBoard';
 import PlayBoard from './playBoard';
 import RulesOverlay from './rulesOverlay';
@@ -25,7 +25,7 @@ type Card = {
 //   Priority: number | null;
 //   Multiplier?: number;
 // };
-type EffectHandler = (
+export type EffectHandler = (
   card: Card,
   Owner: 'Player 1' | 'Player 2',
   negatedPlayers: Set<'Player 1' | 'Player 2'>,
@@ -267,9 +267,11 @@ function App() {
   const [doubledPlayers, setDoubledPlayers] = useState<
     Set<'Player 1' | 'Player 2'>
   >(new Set());
+
   const [quadrupledPlayers, setQuadrupledPlayers] = useState<
     Set<'Player 1' | 'Player 2'>
   >(new Set());
+
   const [skippedPlayers, setSkippedPlayers] = useState<
     Set<'Player 1' | 'Player 2'>
   >(new Set());
@@ -405,7 +407,7 @@ function App() {
     [key: number]: EffectHandler;
   } = {
     //chaotic
-    1: (card, Owner, localNegated, playerDecks) => {
+         1: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -454,7 +456,7 @@ function App() {
       }
     },
     // Covetous
-    2: (card, Owner, localNegated, playerDecks) => {
+         2: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -509,7 +511,7 @@ function App() {
       }
     },
     //Deceitful
-    3: (card, Owner, localNegated, playerDecks) => {
+    3: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -561,7 +563,7 @@ function App() {
       }
     },
     //Impulsive
-    4: (card, Owner, localNegated, playerDecks) => {
+    4: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -637,7 +639,7 @@ function App() {
       ]);
     },
     //Irreverent
-    6: (card, Owner, localNegated, playerDecks) => {
+    6: (_card, Owner, localNegated, _playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) return;
@@ -651,7 +653,7 @@ function App() {
       ]);
     },
     //Free
-    7: (card, Owner, localNegated, playerDecks) => {
+    7: (_card, Owner, localNegated, _playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -665,7 +667,7 @@ function App() {
       ]);
     },
     //Hasty
-    8: (card, Owner, localNegated, playerDecks) => {
+    8: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -690,7 +692,7 @@ function App() {
       ]);
     },
     //Nostalgic
-    9: (card, Owner, localNegated, playerDecks) => {
+    9: (_card, Owner, localNegated, playerDecks) => {
       //TODO: move this effect to the [turn] useEffect and just trigger that card. Nostalgic has no handler.
       // testing Return so we can isolate issues
       // return;
@@ -730,7 +732,7 @@ function App() {
       // ]);
     },
     //Patient
-    10: (card, Owner, localNegated, playerDecks) => {
+    10: (_card, Owner, localNegated, _playerDecks) => {
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -738,7 +740,7 @@ function App() {
       return;
     },
     //Plunderous
-    11: (card, Owner, localNegated, playerDecks) => {
+    11: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -775,7 +777,7 @@ function App() {
       }
     },
     //Powerful
-    12: (card, Owner, localNegated, playerDecks) => {
+    12: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -805,7 +807,7 @@ function App() {
       });
     },
     // Rapid
-    13: (card, Owner, localNegated, playerDecks) => {
+    13: (_card, Owner, localNegated, _playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -820,7 +822,7 @@ function App() {
       ]);
     },
     // Reckless
-    14: (card, Owner, localNegated, playerDecks) => {
+    14: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -833,8 +835,8 @@ function App() {
       const targetDeck =
         target === 'Player 1' ? playerDecks.Deck1 : playerDecks.Deck2;
       const topCard = targetDeck[targetDeck.length - 1];
-      const handler = effectHandlers[topCard.id];
       if (!topCard) return;
+      const handler = effectHandlers[topCard.id];
       setGameLog((prev) => [
         ...prev,
         `${Owner} forced ${target} to play ${topCard.Name} using Reckless.`,
@@ -852,7 +854,7 @@ function App() {
       }
     },
     //Resourceful
-    15: (card, Owner, localNegated, playerDecks) => {
+    15: (_card, Owner, localNegated, _playerDecks) => {
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -860,7 +862,7 @@ function App() {
       return;
     },
     //Strategic
-    16: (card, Owner, localNegated, playerDecks) => {
+    16: (_card, Owner, localNegated, _playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -874,7 +876,7 @@ function App() {
       ]);
     },
     //Tempered
-    17: (card, Owner, localNegated, playerDecks) => {
+    17: (_card, Owner, localNegated, _playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -885,7 +887,7 @@ function App() {
       setGameLog((prev) => [...prev, `${Owner} skipped their next turn.`]);
     },
     //Tranquil
-    18: (card, Owner, localNegated, playerDecks) => {
+    18: (_card, Owner, localNegated, playerDecks) => {
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -918,7 +920,7 @@ function App() {
       }
     },
     //Wisened
-    19: (card, Owner, localNegated, playerDecks) => {
+    19: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -977,7 +979,7 @@ function App() {
       ]);
     },
     //Measure
-    21: (card, Owner, localNegated, playerDecks) => {
+    21: (_card, Owner, localNegated, playerDecks) => {
       // testing Return so we can isolate issues
       // return;
       if (localNegated.has(Owner)) {
@@ -1014,7 +1016,7 @@ function App() {
       }
     },
     //Cut Not Done
-    22: (card, Owner, localNegated, playerDecks) => {
+    22: (_card, Owner, localNegated, _playerDecks) => {
       if (localNegated.has(Owner)) {
         clearNegation(Owner);
         return;
@@ -1100,14 +1102,24 @@ function App() {
 
       const modalPromises: Promise<void>[] = [];
 
-      sorted.forEach(({ card, Owner }) => {
+      sorted.forEach((item) => {
+        if (!item || !item.Owner) return;
+        const { card, Owner } = item;
         const handler = effectHandlers[card.id];
         if (!handler) return;
 
-        const timesToRun = doubledPlayers.has(Owner) ? 2 : 1;
+        let timesToRun = doubledPlayers.has(Owner) ? 2 : 1;
+        timesToRun = quadrupledPlayers.has(Owner) ? 4 : timesToRun;
 
         if (doubledPlayers.has(Owner)) {
           setDoubledPlayers((prev) => {
+            const next = new Set(prev);
+            next.delete(Owner);
+            return next;
+          });
+        }
+        if (quadrupledPlayers.has(Owner)) {
+          setQuadrupledPlayers((prev) => {
             const next = new Set(prev);
             next.delete(Owner);
             return next;
@@ -1260,7 +1272,7 @@ function App() {
     // playerDecks: { Deck1: Card[]; Deck2: Card[] }
   ) => {
     const playerDecks = JSON.parse(playerDeck);
-    const { card, Owner, context } = playInteraction[0];
+    const { card, Owner, context: _context } = playInteraction[0];
     // if (otherCard) {
     //     const sorted: Card[] = [selectedCard, otherCard];
     //     sorted.sort((a, b) => (a!.Priority ?? 99) - (b!.Priority ?? 99));
@@ -1511,7 +1523,7 @@ function App() {
   };
 
   return (
-    <div>
+    <div className="App">
       <h1>Escape Fate</h1>
       {rules === 'Off' && <button onClick={() => setRules('On')}>Rules</button>}
       {rules === 'On' && <RulesOverlay onClose={() => setRules('Off')} phase={phase} />}

@@ -1,29 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Card from './Card';
 import EffectModal from './effectModal';
 import './playBoard.css';
-
-type EffectHandler = (
-  card: Card,
-  owner: 'Player 1' | 'Player 2',
-  negatedPlayers: Set<'Player 1' | 'Player 2'>
-) => void;
-
-type Card = {
-  Name: string;
-  Text: string;
-  id: number;
-  Owner?: 'Player 1' | 'Player 2';
-  Quantity?: number;
-  Priority: number | null;
-  Multiplier?: number;
-};
+import type { EffectHandler } from './App';
 
 type PlayBoardProps = {
-  player1Deck: number[];
-  setplayer1Deck: React.Dispatch<React.SetStateAction<number[]>>;
-  player2Deck: number[];
-  setplayer2Deck: React.Dispatch<React.SetStateAction<number[]>>;
+  player1Deck: Card[];
+  setplayer1Deck: React.Dispatch<React.SetStateAction<Card[]>>;
+  player2Deck: Card[];
+  setplayer2Deck: React.Dispatch<React.SetStateAction<Card[]>>;
   playZone1: Card[];
   playZone2: Card[];
   cardLibrary: Card[];
@@ -36,37 +21,37 @@ type PlayBoardProps = {
   phase: string;
   playInteraction: {
     card: Card;
-    owner: 'Player 1' | 'Player 2';
+    Owner: 'Player 1' | 'Player 2';
     context: any;
   }[];
   setPlayInteraction: React.Dispatch<
     React.SetStateAction<
       {
         card: Card;
-        owner: 'Player 1' | 'Player 2';
+        Owner: 'Player 1' | 'Player 2';
         context: any;
       }[]
     >
   >;
-  onComplete: (result: any, otherCardd: string, playerDeck:string) => void;
+  onComplete: (result: any, otherCard: Card, playerDeck: string) => void;
 };
 
 const PlayBoard = ({
-  player1Deck,
-  player2Deck,
-  setplayer1Deck,
-  setplayer2Deck,
+  player1Deck: _player1Deck,
+  setplayer1Deck: _setplayer1Deck,
+  player2Deck: _player2Deck,
+  setplayer2Deck: _setplayer2Deck,
   playZone1,
   playZone2,
   cardLibrary,
+  negatedPlayers: _negatedPlayers,
+  effectHandlers: _effectHandlers,
   nextCards,
-  discardPile,
-  phase,
-  effectHandlers,
+  discardPile: _discardPile,
+  phase: _phase,
   playInteraction,
+  setPlayInteraction: _setPlayInteraction,
   onComplete,
-  negatedPlayers,
-  setPlayInteraction,
 }: PlayBoardProps) => {
   const [showStack, setShowStack] = useState(false);
 
@@ -117,7 +102,6 @@ const PlayBoard = ({
                     key={`${cardObj.id}-${i}`}
                     card={card}
                     phase='play'
-                    owner={cardObj.Owner}
                   />
                 ) : null;
               })}
@@ -132,7 +116,6 @@ const PlayBoard = ({
                     key={`${cardObj.id}-${i}`}
                     card={card}
                     phase='play'
-                    owner={cardObj.Owner}
                   />
                 ) : null;
               })}
@@ -169,15 +152,10 @@ const PlayBoard = ({
     return (
       <EffectModal
         card={interaction.card}
-        owner={interaction.owner}
         context={interaction.context}
-        negatedPlayers={negatedPlayers}
-        effectHandlers={effectHandlers}
         cardLibrary={cardLibrary}
-        setplayer1Deck={setplayer1Deck}
-        setplayer2Deck={setplayer2Deck}
         onComplete={onComplete}
-        playInteraction = {playInteraction}
+        playInteraction={playInteraction}
       />
     );
   })()}

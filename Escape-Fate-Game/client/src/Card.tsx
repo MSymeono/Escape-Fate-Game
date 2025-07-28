@@ -1,10 +1,23 @@
-import CardBack from '/BackofCard.png.png'
+import CardBack from './assets/BackofCard.png'
 import './Card.css'
+
+type Card = {
+  Name: string;
+  Text: string;
+  id: number;
+  Owner?: 'Player 1' | 'Player 2';
+  Quantity?: number;
+  Priority: number | null;
+  Multiplier?: number;
+};
+
 type CardProps = {
-    card: CardType;
+    card: Card;
     onClick?: () => void;
     isSelected?: boolean;
     zone?: "draft" | "player1Deck" | "player2Deck" | "board";
+    phase?: string;
+    showText?: boolean;
   };
   
   const Card = ({ card, onClick, phase }: CardProps) => {
@@ -42,6 +55,18 @@ type CardProps = {
         </div>
       );
     }
+
+    return (
+      <div className="card-container">
+        <div className="card-inner">
+          <div className="card-front">
+            <h3>{card.Name}</h3>
+            <p>{card.Text}</p>
+            <p>{card.Priority}</p>
+          </div>
+        </div>
+      </div>
+    );
   };
   
 

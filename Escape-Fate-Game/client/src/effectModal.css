@@ -1,12 +1,17 @@
 .effect-modal {
     position: fixed;
-    top: 20%;
-    left: 20%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background: #0F828C;
     border: 3px solid #320A6B;
-    padding: 1rem;
+    padding: clamp(1rem, 3vw, 2rem);
     z-index: 1000;
     color: var(--popup-text-color);
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 8px;
 }
 
 .effect-modal h4 + div,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import './effectModal.css';
 
 type Card = {
@@ -11,13 +11,13 @@ type Card = {
   Multiplier?: number;
 };
 
-type EffectHandler = (
-  card: Card,
-  owner: 'Player 1' | 'Player 2',
-  negatedPlayers: Set<'Player 1' | 'Player 2'>,
-  playerDecks: { Deck1: Card[]; Deck2: Card[] },
-  otherCard?: Card
-) => void;
+// type EffectHandler = (
+//   card: Card,
+//   owner: 'Player 1' | 'Player 2',
+//   negatedPlayers: Set<'Player 1' | 'Player 2'>,
+//   playerDecks: { Deck1: Card[]; Deck2: Card[] },
+//   otherCard?: Card
+// ) => void;
 
 // const ImpulsiveEffect = ({
 //   topTwoIds,
@@ -132,23 +132,21 @@ const IndecisiveEffect = ({
   discardIds,
   cardLibrary,
   onConfirm,
-  playInteraction,
-  playerDecks,
+  _playerDecks,
   otherCard,
 }: {
   discardIds: number[];
   cardLibrary: Card[];
-
-  playInteraction: any;
+  _playerDecks: { Deck1: Card[]; Deck2: Card[] };
   otherCard: Card;
   onConfirm: (
     selected: Card,
     otherCard: Card,
-    playerDecks: { Deck1: Card[]; Deck2: Card[] }
+    playerDecks: string
   ) => void;
 }) => {
   // const { otherCard } = playInteraction
-  const JSONDecks = JSON.stringify(playerDecks);
+  const JSONDecks = JSON.stringify(_playerDecks);
   // console.log(JSONDecks);
   const discardCards = discardIds
     .map((id) => cardLibrary.find((c) => c.id === id))
@@ -200,17 +198,15 @@ const WeaveEffect = ({
   onConfirm,
   playerDecks,
   otherCard,
-  playInteraction,
 }: {
   topThree: Card[];
   cardLibrary: Card[];
   playerDecks: { Deck1: Card[]; Deck2: Card[] };
   otherCard: Card;
-  playInteraction: any;
   onConfirm: (
     newOrder: Card[],
     otherCard: Card,
-    playerDecks: { Deck1: Card[]; Deck2: Card[] }
+    playerDecks: string
   ) => void;
 }) => {
   const JSONDecks = JSON.stringify(playerDecks);
@@ -264,18 +260,14 @@ const WeaveEffect = ({
 
 const EffectModal = ({
   card,
-  owner,
   context,
   cardLibrary,
-  effectHandlers,
   onComplete,
   playInteraction,
 }: {
   card: Card;
-  owner: 'Player 1' | 'Player 2';
   context: any;
   cardLibrary: Card[];
-  effectHandlers: { [key: number]: EffectHandler };
   playInteraction: any;
   onComplete: (result: any, otherCard: Card, JSONDecks: string) => void;
 }) => {
@@ -314,11 +306,11 @@ const EffectModal = ({
         <IndecisiveEffect
           discardIds={context.discardIds}
           cardLibrary={cardLibrary}
-          playerDecks={playerDecks}
-          otherCard={otherCard}
           onConfirm={(selectedCard) =>
             onComplete([selectedCard], otherCard, JSONDecks)
           }
+          _playerDecks={playerDecks}
+          otherCard={otherCard}
         />
       ) : (
         //  : isNostalgic ? (
@@ -337,7 +329,7 @@ const EffectModal = ({
         //     onConfirm={(selectedCardIds) => onComplete(selectedCardIds)}
         //   />
         // )
-        <button onClick={() => onComplete()}>Done</button>
+        <button onClick={() => onComplete(null, otherCard, JSONDecks)}>Done</button>
       )}
     </div>
   );

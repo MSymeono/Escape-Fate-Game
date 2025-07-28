@@ -1,7 +1,7 @@
 import './rulesOverlay.css'
 
 
-const RulesOverlay = ({ onClose, phase }: { onClose: () => void; phase: string }) => {
+const RulesOverlay = ({ onClose, phase: _phase }: { onClose: () => void; phase: string }) => {
     return (
       <div className="rules-overlay">
         <div className="rules-content">

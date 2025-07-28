@@ -1,41 +1,52 @@
+.play-board {
+  padding: 20px;
+}
+
+.in-play-row {
+  display: flex;
+  justify-content: space-around;
+  margin: 20px 0;
+}
+
+.player-zone {
+  text-align: center;
+}
+
 .stack-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 999;
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow-y: auto;
+  z-index: 999;
 }
 
 .stack-content {
-  background: #0F828C;
-  padding: 2rem;
-  border-radius: 10px;
-  max-width: 90%;
+  background: white;
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: 8px;
+  max-width: 90vw;
   max-height: 90vh;
-  overflow: auto;
+  overflow-y: auto;
+  border: 3px solid #320A6B;
 }
 
 .horizontal-stack {
   display: flex;
+  gap: clamp(0.5rem, 2vw, 1rem);
+  margin: 10px 0;
+  min-width: max-content;
   overflow-x: auto;
-  gap: 1rem;
-  padding: 1rem;
-  max-width: 100%;
-  border: 1px solid #ccc;
+  padding: 0.5rem;
 }
 
-.horizontal-stack > * {
-  flex: 0 0 auto;
-  width: 160px; /* Match your card width */
-  overflow: hidden;
-  white-space: normal; /* ✅ allow line wrapping */
-  text-overflow: ellipsis;
+.horizontal-stack .card-container {
+  min-width: clamp(100px, 15vw, 150px);
+  flex-shrink: 0;
 }
 
 

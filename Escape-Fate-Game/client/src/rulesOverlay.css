@@ -13,11 +13,13 @@
   
   .rules-content {
     background: #0F828C;
-    padding: 2rem;
+    padding: clamp(1rem, 3vw, 2rem);
     border-radius: 10px;
-    max-width: 800px;
+    max-width: 90vw;
     width: 90%;
+    max-height: 90vh;
     color: var(--popup-text-color);
+    border: 3px solid #320A6B;
   }
 
   .rules-scrollable {
