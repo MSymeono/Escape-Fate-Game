@@ -1057,9 +1057,9 @@ function App() {
         }
       }
       if (latestP1.id === 9) {
-        latestP1.Priority = cardToTrigger ? cardToTrigger.id : null;
+        latestP1.Priority = cardToTrigger ? cardToTrigger.Priority : null;
       } else {
-        latestP2.id = cardToTrigger!.id;
+        latestP2.Priority = cardToTrigger!.Priority;
       }
     }
     if (
